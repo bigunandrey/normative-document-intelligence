@@ -57,13 +57,13 @@ Goal: transform the accepted canonical document into deterministic, source-bound
 - table/formula rule registry primitives;
 - strengthened table/formula registry validation and source-expression integrity checks;
 - explicit dependency/cross-reference graph;
+- deterministic dependency/cross-reference target resolution against the canonical document graph, including RESOLVED / UNRESOLVED / AMBIGUOUS outcomes and fail-closed validation;
 - deterministic source-bound semantic evaluation model;
 - fail-closed handling of unresolved applicability/conditions during evaluation;
 - amendment/deletion semantics, with explicit source-bound ADD/REPLACE/DELETE actions and fail-closed ambiguity handling;
 - regression coverage for the implemented semantic chain.
 
 **Remaining:**
-- dependency/cross-reference target resolution against the document graph;
 - complete provenance validation for every semantic artifact back to canonical nodes/source anchors;
 - fail-closed handling of unresolved amendment, dependency and semantic interpretation;
 - comprehensive regression fixtures for amendments/deletions, resolved dependencies, tables/formulas, and full semantic provenance.
