@@ -120,36 +120,39 @@ def new_document(source_name: str, source_sha256: str, page_count: int | None, p
 
 
 def _expand_structural_record(item: Mapping[str, Any]) -> list[Mapping[str, Any]]:
-    """Expand nested structures with explicit local parent references."""
+    """Expand nested table/list structures while retaining deterministic parent links."""
     result: list[Mapping[str, Any]] = [dict(item)]
     typ = _node_type(item.get("type", item.get("element_type", item.get("kind"))))
+
+    def append_child(child: Any, child_type: NodeType, parent_ordinal: int, inherited_page: int | None) -> int:
+        child_data = dict(child) if isinstance(child, Mapping) else {"text": _text(child)}
+        child_data.setdefault("type", child_type.value)
+        child_data.setdefault("page", inherited_page)
+        child_data.setdefault(_LOCAL_PARENT, parent_ordinal)
+        result.append(child_data)
+        return len(result) - 1
+
     if typ == NodeType.TABLE:
         rows = item.get("rows", item.get("children", ()))
         if isinstance(rows, (list, tuple)):
             for row in rows:
-                row_data = dict(row) if isinstance(row, Mapping) else {"text": _text(row)}
-                row_data.setdefault("type", NodeType.TABLE_ROW.value)
-                row_data.setdefault("page", _page(item))
-                row_data.setdefault(_LOCAL_PARENT, 0)
-                result.append(row_data)
-                row_ordinal = len(result) - 1
+                row_ordinal = append_child(row, NodeType.TABLE_ROW, 0, _page(item))
+                row_data = result[row_ordinal]
                 cells = row_data.get("cells", row_data.get("children", ()))
                 if isinstance(cells, (list, tuple)):
                     for cell in cells:
-                        cell_data = dict(cell) if isinstance(cell, Mapping) else {"text": _text(cell)}
-                        cell_data.setdefault("type", NodeType.TABLE_CELL.value)
-                        cell_data.setdefault("page", _page(row_data))
-                        cell_data.setdefault(_LOCAL_PARENT, row_ordinal)
-                        result.append(cell_data)
+                        append_child(cell, NodeType.TABLE_CELL, row_ordinal, _page(row_data))
     elif typ == NodeType.LIST:
         items = item.get("items", item.get("children", ()))
         if isinstance(items, (list, tuple)):
-            for child in items:
-                child_data = dict(child) if isinstance(child, Mapping) else {"text": _text(child)}
-                child_data.setdefault("type", NodeType.LIST_ITEM.value)
-                child_data.setdefault("page", _page(item))
-                child_data.setdefault(_LOCAL_PARENT, 0)
-                result.append(child_data)
+            pending: list[tuple[Any, int]] = [(child, 0) for child in items]
+            while pending:
+                child, parent_ordinal = pending.pop(0)
+                child_ordinal = append_child(child, NodeType.LIST_ITEM, parent_ordinal, _page(item))
+                child_data = result[child_ordinal]
+                nested = child_data.get("items", child_data.get("children", ()))
+                if isinstance(nested, (list, tuple)):
+                    pending[0:0] = [(nested_child, child_ordinal) for nested_child in nested]
     return result
 
 
