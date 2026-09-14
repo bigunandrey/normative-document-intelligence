@@ -3,10 +3,16 @@ name = "normative-document-intelligence"
 version = "0.1.0"
 description = "Parser-neutral framework for structured and traceable normative document recognition"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "markitdown[pdf]>=0.1.5",
+    "pypdf>=5.0",
+]
 
 [project.optional-dependencies]
 test = ["pytest>=8.0"]
+
+[project.scripts]
+ndi-ingest = "ndi.cli:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
