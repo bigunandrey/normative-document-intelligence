@@ -4,6 +4,7 @@ import pytest
 
 from ndi import CanonicalDocument, CanonicalNode, DocumentIdentity, NodeType, SourceAnchor, SourceCandidate, SourceType, ValidatedSource
 from ndi.external_comparison import compare_observation_set
+from ndi.external_pipeline import run_external_cross_check
 from ndi.external_retrieval import retrieve_validated, verify_retrieved_bytes
 from ndi.external_parsing import aggregate_external_observations, parse_retrieved_external
 from ndi.source_registry import Compatibility
@@ -33,7 +34,7 @@ class Provider:
         self.content = content
 
     def discover(self, identity):
-        return ()
+        return (source(self.content).candidate,)
 
     def retrieve(self, validated):
         return ExternalDocument(validated, self.content)
@@ -146,3 +147,27 @@ def test_aggregated_external_observations_feed_comparison_engine():
     result = compare_observation_set(supplied, aggregated)
     assert result.passed
     assert result.source.candidate.source_id == "official"
+
+
+def test_external_pipeline_executes_provider_to_comparison():
+    supplied = CanonicalDocument("external-test", "Official", source(b"pdf").candidate.sha256, 1, [], {"supplied": "1.0"})
+    results = run_external_cross_check(supplied, IDENTITY, (Provider(b"pdf"),), (Parser(),))
+    assert len(results) == 1
+    assert results[0].comparison.passed
+
+
+def test_external_pipeline_deduplicates_sources_deterministically():
+    supplied = CanonicalDocument("external-test", "Official", source(b"pdf").candidate.sha256, 1, [], {"supplied": "1.0"})
+    results = run_external_cross_check(supplied, IDENTITY, (Provider(b"pdf"), Provider(b"pdf")), (Parser(),))
+    assert len(results) == 1
+
+
+def test_external_pipeline_is_fail_closed_on_parser_disagreement():
+    supplied = CanonicalDocument("external-test", "Official", source(b"pdf").candidate.sha256, 1, [], {"supplied": "1.0"})
+    with pytest.raises(ValueError, match="disagreement"):
+        run_external_cross_check(
+            supplied,
+            IDENTITY,
+            (Provider(b"pdf"),),
+            (_parser_with_node("a", "same"), _parser_with_node("b", "different")),
+        )
