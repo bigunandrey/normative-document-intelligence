@@ -8,6 +8,10 @@ import re
 import time
 from pathlib import Path
 
+EXPECTED_SHA256 = "fbaa2493ed510d621e8f368ec4910e5cc30d177744f22356fe3a120bbe5a5056"
+EXPECTED_SIZE_BYTES = 23_532_218
+EXPECTED_PAGE_COUNT = 105
+
 
 def sha256(path: Path) -> str:
     digest = hashlib.sha256()
@@ -15,6 +19,12 @@ def sha256(path: Path) -> str:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def page_count(source: Path) -> int:
+    from pypdf import PdfReader
+
+    return len(PdfReader(str(source)).pages)
 
 
 def benchmark_markitdown(source: Path) -> dict[str, object]:
@@ -45,12 +55,24 @@ def main() -> int:
     if not args.pdf.is_file():
         raise SystemExit(f"Fixture not found: {args.pdf}")
 
+    source_digest = sha256(args.pdf)
+    source_size = args.pdf.stat().st_size
+    pages = page_count(args.pdf)
+    if source_digest != EXPECTED_SHA256 or source_size != EXPECTED_SIZE_BYTES or pages != EXPECTED_PAGE_COUNT:
+        raise SystemExit(
+            "DBN fixture identity mismatch: "
+            f"sha256={source_digest}, size={source_size}, pages={pages}; "
+            "expected the registered DBN V.2.5-56:2014 fixture."
+        )
+
     payload = {
         "benchmark": "DBN V.2.5-56:2014 + Changes 1 and 2",
         "source": {
             "filename": args.pdf.name,
-            "source_sha256": sha256(args.pdf),
-            "size_bytes": args.pdf.stat().st_size,
+            "source_sha256": source_digest,
+            "size_bytes": source_size,
+            "page_count": pages,
+            "identity_verified": True,
         },
         "parsers": [benchmark_markitdown(args.pdf)],
     }
