@@ -1,7 +1,7 @@
 import pytest
 
-from ndi import BoundingBox, CanonicalDocument, CanonicalNode, NodeType, SourceAnchor, build_applicability_links, build_amendment_actions, build_dependency_graph, build_normative_units, build_revision_lock, build_rule_registry, evaluate_normative_unit, evaluate_normative_units, validate_amendment_actions, validate_applicability_links, validate_dependency_graph, validate_normative_units, validate_rule_registry
-from ndi.normative_semantics import SemanticInterpretationError, decompose_normative_node, ApplicabilityLink, RuleRegistryEntry
+from ndi import BoundingBox, CanonicalDocument, CanonicalNode, NodeType, SourceAnchor, build_applicability_links, build_amendment_actions, build_dependency_graph, build_normative_units, build_revision_lock, build_rule_registry, evaluate_normative_unit, evaluate_normative_units, validate_amendment_actions, validate_applicability_links, validate_dependency_graph, validate_normative_units, validate_rule_registry, RuleRegistryEntry, SemanticDependency, SemanticDependencyGraph
+from ndi.normative_semantics import SemanticInterpretationError, decompose_normative_node, ApplicabilityLink
 from ndi.amendment_semantics import AmendmentInterpretationError
 
 SHA = "a" * 64
@@ -130,7 +130,29 @@ def test_dependency_graph_uses_only_explicit_source_targets():
     assert dep.relation == "depends_on"
     assert dep.source_node_id == "node-1"
     assert dep.evidence_text == units[0].source_text
-    assert validate_dependency_graph(graph, lock) == (True, [])
+    assert validate_dependency_graph(graph, lock, units=units, document=d, known_targets={"clause:5.2": "resolved"}) == (True, [])
+
+
+def test_dependency_graph_rejects_unresolved_target():
+    d = doc("The system shall comply with clause 5.2.", attributes={"references": ["clause:5.2"]})
+    lock = build_revision_lock(d)
+    units = build_normative_units(d, lock)
+    graph = build_dependency_graph(units, lock)
+    ok, issues = validate_dependency_graph(graph, lock, units=units, document=d, known_targets={"clause:6.1": "resolved"})
+    assert not ok
+    assert "Dependency target is unresolved: clause:5.2" in issues
+
+
+def test_dependency_graph_rejects_tampered_provenance():
+    d = doc("The system shall comply with clause 5.2.", attributes={"references": ["clause:5.2"]})
+    lock = build_revision_lock(d)
+    units = build_normative_units(d, lock)
+    dep = build_dependency_graph(units, lock).dependencies[0]
+    tampered = SemanticDependency(dep.dependency_id, dep.document_id, dep.source_sha256, dep.digital_revision, dep.source_unit_id, dep.target, dep.relation, "missing-node", dep.anchor_page, dep.evidence_text)
+    graph = SemanticDependencyGraph(lock.document_id, lock.source_sha256, lock.digital_revision, (tampered,))
+    ok, issues = validate_dependency_graph(graph, lock, units=units, document=d, known_targets={"clause:5.2": "resolved"})
+    assert not ok
+    assert any("source anchor" in issue or "unknown source node" in issue for issue in issues)
 
 
 def test_dependency_graph_rejects_unbound_unit():
