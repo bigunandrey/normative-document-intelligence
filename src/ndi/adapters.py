@@ -9,6 +9,9 @@ from .canonical import BoundingBox, CanonicalDocument, NodeType, SourceAnchor, s
 from .observations import RawObservation, add_observation
 
 
+_LOCAL_PARENT = "_local_parent_ordinal"
+
+
 def _text(value: Any) -> str:
     if value is None:
         return ""
@@ -97,8 +100,8 @@ def new_document(source_name: str, source_sha256: str, page_count: int | None, p
 
 
 def _expand_structural_record(item: Mapping[str, Any]) -> list[Mapping[str, Any]]:
-    """Expand nested structures with parent ordinals local to this record."""
-    result: list[Mapping[str, Any]] = [item]
+    """Expand nested structures with explicit local parent references."""
+    result: list[Mapping[str, Any]] = [dict(item)]
     typ = _node_type(item.get("type", item.get("element_type", item.get("kind"))))
     if typ == NodeType.TABLE:
         rows = item.get("rows", item.get("children", ()))
@@ -107,16 +110,16 @@ def _expand_structural_record(item: Mapping[str, Any]) -> list[Mapping[str, Any]
                 row_data = dict(row) if isinstance(row, Mapping) else {"text": _text(row)}
                 row_data.setdefault("type", NodeType.TABLE_ROW.value)
                 row_data.setdefault("page", _page(item))
-                row_ordinal = len(result)
-                row_data.setdefault("parent_ordinal", 0)
+                row_data.setdefault(_LOCAL_PARENT, 0)
                 result.append(row_data)
+                row_ordinal = len(result) - 1
                 cells = row_data.get("cells", row_data.get("children", ()))
                 if isinstance(cells, (list, tuple)):
                     for cell in cells:
                         cell_data = dict(cell) if isinstance(cell, Mapping) else {"text": _text(cell)}
                         cell_data.setdefault("type", NodeType.TABLE_CELL.value)
                         cell_data.setdefault("page", _page(row_data))
-                        cell_data.setdefault("parent_ordinal", row_ordinal)
+                        cell_data.setdefault(_LOCAL_PARENT, row_ordinal)
                         result.append(cell_data)
     elif typ == NodeType.LIST:
         items = item.get("items", item.get("children", ()))
@@ -125,7 +128,7 @@ def _expand_structural_record(item: Mapping[str, Any]) -> list[Mapping[str, Any]
                 child_data = dict(child) if isinstance(child, Mapping) else {"text": _text(child)}
                 child_data.setdefault("type", NodeType.LIST_ITEM.value)
                 child_data.setdefault("page", _page(item))
-                child_data.setdefault("parent_ordinal", 0)
+                child_data.setdefault(_LOCAL_PARENT, 0)
                 result.append(child_data)
     return result
 
@@ -141,16 +144,22 @@ def from_records(
 ) -> CanonicalDocument:
     document = new_document(source_name, source_sha256, page_count, parser, version)
     expanded: list[Mapping[str, Any]] = []
+    parent_refs: dict[int, int] = {}
     for item in records:
         start = len(expanded)
-        children = _expand_structural_record(item)
-        for child_index, child in enumerate(children):
+        for child in _expand_structural_record(item):
             child_data = dict(child)
-            if child_index > 0 and child_data.get("parent_ordinal") is not None:
-                child_data["parent_ordinal"] = int(child_data["parent_ordinal"]) + start
+            local_parent = child_data.pop(_LOCAL_PARENT, None)
+            ordinal = len(expanded)
             expanded.append(child_data)
+            if local_parent is not None:
+                parent_refs[ordinal] = start + int(local_parent)
+            elif child_data.get("parent_ordinal") is not None:
+                try:
+                    parent_refs[ordinal] = int(child_data["parent_ordinal"])
+                except (TypeError, ValueError):
+                    pass
 
-    pending_parent: dict[int, int] = {}
     for ordinal, item in enumerate(expanded):
         add_observation(
             document,
@@ -165,14 +174,9 @@ def from_records(
             ),
             ordinal=ordinal,
         )
-        if item.get("parent_ordinal") is not None:
-            try:
-                pending_parent[ordinal] = int(item["parent_ordinal"])
-            except (TypeError, ValueError):
-                pass
 
-    for ordinal, parent_ordinal in pending_parent.items():
-        if 0 <= ordinal < len(document.nodes) and 0 <= parent_ordinal < len(document.nodes):
+    for ordinal, parent_ordinal in parent_refs.items():
+        if 0 <= ordinal < len(document.nodes) and 0 <= parent_ordinal < len(document.nodes) and ordinal != parent_ordinal:
             document.nodes[ordinal].parent_id = document.nodes[parent_ordinal].node_id
     return document
 
