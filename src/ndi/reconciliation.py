@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .canonical import CanonicalDocument, CanonicalNode, ParserObservation
+from .canonical import CanonicalDocument, ParserObservation
 
 
 @dataclass(frozen=True)
@@ -30,7 +30,7 @@ class ReconciliationReport:
 
 def reconcile_document(document: CanonicalDocument) -> ReconciliationReport:
     report = ReconciliationReport()
-    for node in document.nodes.values():
+    for node in document.nodes:
         observations = node.observations
         if not observations:
             report.decisions.append(
@@ -46,17 +46,17 @@ def reconcile_document(document: CanonicalDocument) -> ReconciliationReport:
         texts = {observation.text for observation in observations}
         types = {observation.node_type for observation in observations}
         status = "AGREED" if len(texts) == 1 and len(types) == 1 else "CONFLICT"
-        reason = "All parser observations agree structurally." if status == "AGREED" else "Parser observations disagree and require review."
+        reason = (
+            "All parser observations agree structurally."
+            if status == "AGREED"
+            else "Parser observations disagree and require review."
+        )
         report.decisions.append(
             ReconciliationDecision(
                 node_id=node.node_id,
                 status=status,
-                observation_ids=tuple(_observation_id(observation) for observation in observations),
+                observation_ids=tuple(observation.observation_id for observation in observations),
                 reason=reason,
             )
         )
     return report
-
-
-def _observation_id(observation: ParserObservation) -> str:
-    return f"{observation.parser}:{observation.parser_version}:{observation.node_type}:{observation.text}"
