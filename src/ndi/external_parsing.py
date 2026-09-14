@@ -11,6 +11,8 @@ from .external_retrieval import RetrievedSource
 
 
 class ExternalParser(Protocol):
+    """Parser contract executed independently from the user-supplied observation set."""
+
     name: str
     version: str
 
@@ -20,27 +22,39 @@ class ExternalParser(Protocol):
 
 @dataclass(frozen=True)
 class ExternalParserObservation:
+    """One independently parsed, source-bound external representation."""
+
     parser: str
     parser_version: str
     document: CanonicalDocument
     source_sha256: str
 
 
-def parse_retrieved_external(retrieved: RetrievedSource, parsers: tuple[ExternalParser, ...]) -> tuple[ExternalParserObservation, ...]:
+def parse_retrieved_external(
+    retrieved: RetrievedSource,
+    parsers: tuple[ExternalParser, ...],
+) -> tuple[ExternalParserObservation, ...]:
+    """Parse verified external bytes with every configured independent parser."""
     if not parsers:
         raise ValueError("At least one independent external parser is required")
     identities = [(parser.name, parser.version) for parser in parsers]
     if len(set(identities)) != len(identities):
         raise ValueError("Duplicate external parser identities are not allowed")
+
     content = retrieved.document.content
     if not isinstance(content, (bytes, bytearray)):
         raise ValueError("Retrieved external document must contain byte content")
     content = bytes(content)
     if hashlib.sha256(content).hexdigest() != retrieved.sha256:
         raise ValueError("Retrieved content no longer matches its verified SHA-256")
-    results = []
+
+    results: list[ExternalParserObservation] = []
     for parser in parsers:
-        document = parser.parse(content, source_name=retrieved.document.source.candidate.source_name, source_sha256=retrieved.sha256)
+        document = parser.parse(
+            content,
+            source_name=retrieved.document.source.candidate.source_name,
+            source_sha256=retrieved.sha256,
+        )
         if not isinstance(document, CanonicalDocument):
             raise ValueError(f"External parser {parser.name} returned an invalid document")
         if document.source_sha256 != retrieved.sha256:
