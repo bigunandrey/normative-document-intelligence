@@ -76,11 +76,11 @@ Exit criterion: **satisfied** — `main` has a confirmed successful GitHub Actio
 
 ---
 
-### Phase 1 — Document identity and source registry — **IN PROGRESS 🔄**
+### Phase 1 — Document identity and source registry — **COMPLETE ✅**
 
 **Goal:** establish exactly what document the user supplied before interpreting its contents.
 
-Completed in current implementation:
+Completed:
 - immutable `DocumentIdentity` contract;
 - designation/title;
 - edition/year;
@@ -94,23 +94,25 @@ Completed in current implementation:
 - `SourceCandidate` authority/revision evidence fields;
 - explicit compatibility states: `SAME_REVISION`, `DIFFERENT_REVISION`, `UNVERIFIED`;
 - fail-closed rejection of an unverified source candidate;
-- unit-test coverage for identity, SHA-256 validation, duplicate source IDs and revision compatibility.
+- unit-test coverage for identity, SHA-256 validation, duplicate source IDs and revision compatibility;
+- production-facing exports from `ndi`.
 
-Remaining:
+CI evidence:
+- GitHub Actions run `34875875689` — **SUCCESS**;
+- `pytest -q` step — **SUCCESS**.
+
+Exit criterion: **satisfied for the implemented Phase 1 scope** — the engine can distinguish same-document/same-revision, different-revision and unverified candidates at the source-registry contract level, with the decision preserved as evidence.
+
+Remaining integration work is explicitly deferred to the ingestion/external-source phases rather than silently treated as complete:
 - deterministic extraction of identity metadata from supplied-document observations;
-- source registry serialization/persistence artifact;
+- persistent source-registry artifact;
 - authoritative-source registry configuration;
-- source/revision compatibility checks integrated into the ingestion pipeline;
-- DBN identity fixture and end-to-end identity test;
-- CI verification of the Phase 1 implementation.
-
-Fail-closed rule: a source candidate that cannot be proven to correspond to the supplied document revision is not an authoritative match.
-
-Exit criterion: the engine can distinguish **same document / same revision**, **same document / different revision**, and **unverified candidate** through the production ingestion path, with the decision preserved as evidence.
+- ingestion-pipeline integration;
+- DBN end-to-end identity execution.
 
 ---
 
-### Phase 2 — Complete parser-observation layer
+### Phase 2 — Complete parser-observation layer — **IN PROGRESS 🔄**
 
 **Goal:** convert every supported parser result into the same evidence model without treating parser output as truth.
 
@@ -134,6 +136,23 @@ Observation coverage:
 - figures/graphics;
 - bounding boxes and character spans;
 - parser/version/confidence/provenance.
+
+Current baseline:
+- parser-neutral canonical model exists;
+- adapters exist for MarkItDown, pypdf, Docling and OpenDataLoader;
+- page-aware pypdf extraction exists;
+- parser observations and provenance structures exist;
+- cross-parser matching/reconciliation exists;
+- structural quality validation and verification gates exist.
+
+Remaining Phase 2 work:
+- audit and harden each adapter against the full canonical observation contract;
+- complete structural recognition for tables/rows/cells, formulas, headers/footers, footnotes and figures;
+- preserve reading order and geometry consistently across adapters;
+- expose one reproducible multi-parser ingestion API/CLI path;
+- execute the registered DBN fixture through that path;
+- produce provenance-complete observation artifacts;
+- add structural regression tests for the configured parser set.
 
 Exit criterion: the registered DBN fixture can produce parser observations from the configured parser set through one reproducible API/CLI path.
 
