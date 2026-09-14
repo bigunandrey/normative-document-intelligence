@@ -1,7 +1,7 @@
 import pytest
 
-from ndi import BoundingBox, CanonicalDocument, CanonicalNode, NodeType, SourceAnchor, build_applicability_links, build_amendment_actions, build_dependency_graph, build_normative_units, build_revision_lock, build_rule_registry, evaluate_normative_unit, evaluate_normative_units, validate_amendment_actions, validate_applicability_links, validate_dependency_graph, validate_normative_units
-from ndi.normative_semantics import SemanticInterpretationError, decompose_normative_node, ApplicabilityLink
+from ndi import BoundingBox, CanonicalDocument, CanonicalNode, NodeType, SourceAnchor, build_applicability_links, build_amendment_actions, build_dependency_graph, build_normative_units, build_revision_lock, build_rule_registry, evaluate_normative_unit, evaluate_normative_units, validate_amendment_actions, validate_applicability_links, validate_dependency_graph, validate_normative_units, validate_rule_registry
+from ndi.normative_semantics import SemanticInterpretationError, decompose_normative_node, ApplicabilityLink, RuleRegistryEntry
 from ndi.amendment_semantics import AmendmentInterpretationError
 
 SHA = "a" * 64
@@ -96,6 +96,27 @@ def test_table_and_formula_rule_registry_is_deterministic_and_bound():
     rules = build_rule_registry(d, lock)
     assert [(r.rule_kind, r.node_id) for r in rules] == [("table", "table-1"), ("formula", "formula-1")]
     assert all(r.source_sha256 == SHA and r.digital_revision == lock.digital_revision for r in rules)
+    assert validate_rule_registry(rules, d, lock) == (True, [])
+
+
+def test_table_formula_registry_detects_tampered_expression():
+    d = CanonicalDocument("doc-test", "test.pdf", SHA, 1)
+    d.add_node(CanonicalNode("formula-1", NodeType.FORMULA, text="Q = k * sqrt(P)", order=0, anchor=SourceAnchor(page=1)))
+    lock = build_revision_lock(d)
+    entry = build_rule_registry(d, lock)[0]
+    tampered = RuleRegistryEntry(entry.rule_id, entry.document_id, entry.source_sha256, entry.digital_revision, entry.node_id, entry.anchor_page, entry.rule_kind, "Q = tampered", entry.source_text, entry.metadata)
+    ok, issues = validate_rule_registry((tampered,), d, lock)
+    assert not ok
+    assert any("expression does not match" in issue for issue in issues)
+
+
+def test_table_formula_registry_detects_unknown_node():
+    d = doc("The system shall provide fire detection.")
+    lock = build_revision_lock(d)
+    entry = RuleRegistryEntry("rule-unknown", d.document_id, SHA, lock.digital_revision, "missing-node", 1, "formula", "Q=1", "Q=1")
+    ok, issues = validate_rule_registry((entry,), d, lock)
+    assert not ok
+    assert any("unknown node" in issue for issue in issues)
 
 
 def test_dependency_graph_uses_only_explicit_source_targets():
