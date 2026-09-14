@@ -41,9 +41,9 @@ def benchmark_markitdown(source: Path) -> dict[str, object]:
         "elapsed_seconds": round(elapsed, 3),
         "characters": len(text),
         "lines": len(lines),
-        "headings": len(re.findall(r"(?m)^#{1,6}\\s+", text)),
+        "headings": len(re.findall(r"(?m)^#{1,6}\s+", text)),
         "table_like_lines": sum("|" in line for line in lines),
-        "numbered_items": len(re.findall(r"(?m)^\\s*\\d+(?:\\.\\d+)*[.)]\\s+", text)),
+        "numbered_items": len(re.findall(r"(?m)^\s*\d+(?:\.\d+)*[.)]\s+", text)),
     }
 
 
