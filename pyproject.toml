@@ -1,0 +1,13 @@
+[project]
+name = "normative-document-intelligence"
+version = "0.1.0"
+description = "Parser-neutral framework for structured and traceable normative document recognition"
+requires-python = ">=3.12"
+dependencies = []
+
+[project.optional-dependencies]
+test = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
