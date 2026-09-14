@@ -12,7 +12,7 @@ from enum import StrEnum
 import hashlib
 import json
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Iterable
 
 from .canonical import CanonicalDocument
 from .matching import compare_documents, match_nodes
@@ -100,22 +100,19 @@ class AcceptanceEvidence:
     revision_locked: bool = False
 
     def missing(self) -> list[str]:
-        checks = asdict(self)
-        return [name for name, value in checks.items() if value is False or value == 0]
+        return [name for name, value in asdict(self).items() if value is False or value == 0]
 
 
 def merge_parser_documents(documents: Iterable[CanonicalDocument]) -> CanonicalDocument:
-    """Merge parser-specific canonical documents into one evidence container.
-
-    Matching is conservative. Matched nodes receive additional observations;
-    unmatched nodes remain explicit instead of being silently discarded.
-    """
+    """Merge parser documents while preserving unmatched-node discrepancies."""
     docs = list(documents)
     if not docs:
         raise ValueError("At least one parser document is required")
     merged = docs[0]
+    merge_discrepancies: list[dict[str, object]] = []
     for other in docs[1:]:
         pairs = match_nodes(merged, other)
+        matched_left = {left_id for left_id, _ in pairs}
         matched_right = {right_id for _, right_id in pairs}
         for left_id, right_id in pairs:
             target = merged.node(left_id)
@@ -124,8 +121,13 @@ def merge_parser_documents(documents: Iterable[CanonicalDocument]) -> CanonicalD
                 target.add_observation(observation)
         for source in other.nodes:
             if source.node_id not in matched_right:
+                merge_discrepancies.append({"side": "right", "node_id": source.node_id, "parser": next(iter(other.parser_versions), "unknown")})
                 merged.nodes.append(source)
+        for source in merged.nodes:
+            if source.node_id not in matched_left and source.observations and any(o.parser in other.parser_versions for o in source.observations):
+                continue
         merged.parser_versions.update(other.parser_versions)
+    merged.metadata["parser_merge_discrepancies"] = merge_discrepancies
     return merged
 
 
@@ -141,20 +143,21 @@ def gate_a_observations(documents: Iterable[CanonicalDocument], *, required_pars
             issues.append(f"Missing parser observations: {', '.join(missing)}")
     checks["observations_present"] = all(bool(n.observations) for d in docs for n in d.nodes) if docs else False
     checks["source_identity_present"] = all(bool(d.source_sha256) and len(d.source_sha256) == 64 for d in docs) if docs else False
-    status = GateStatus.PASS if all(checks.values()) else GateStatus.FAIL
-    return GateResult("A", status, checks, issues)
+    return GateResult("A", GateStatus.PASS if all(checks.values()) else GateStatus.FAIL, checks, issues)
 
 
 def gate_b_reconciliation(document: CanonicalDocument) -> tuple[GateResult, ReconciliationReport]:
     report = reconcile_document(document)
     conflicts = len(report.conflicts)
     missing = sum(d.status == "MISSING_OBSERVATION" for d in report.decisions)
-    checks = {"reconciliation_executed": True, "no_conflicts": conflicts == 0, "no_missing_observations": missing == 0}
+    merge_discrepancies = document.metadata.get("parser_merge_discrepancies", [])
+    checks = {"reconciliation_executed": True, "no_conflicts": conflicts == 0, "no_missing_observations": missing == 0, "no_unmatched_parser_nodes": not merge_discrepancies}
     issues = [f"{conflicts} parser conflicts require review."] if conflicts else []
     if missing:
         issues.append(f"{missing} canonical nodes have missing observations.")
-    status = GateStatus.PASS if all(checks.values()) else GateStatus.FAIL
-    return GateResult("B", status, checks, issues, ["reconciliation-report.json"]), report
+    if merge_discrepancies:
+        issues.append(f"{len(merge_discrepancies)} parser nodes could not be matched and require review.")
+    return GateResult("B", GateStatus.PASS if all(checks.values()) else GateStatus.FAIL, checks, issues, ["reconciliation-report.json"]), report
 
 
 def gate_c_structural_acceptance(document: CanonicalDocument, reconciliation: ReconciliationReport) -> GateResult:
@@ -164,8 +167,7 @@ def gate_c_structural_acceptance(document: CanonicalDocument, reconciliation: Re
     issues = [f"Recognition quality: {audit.quality.value}"] if audit.quality != Quality.PASS else []
     if blocking:
         issues.append(f"{len(blocking)} reconciliation decisions are not AGREED.")
-    status = GateStatus.PASS if all(checks.values()) else GateStatus.FAIL
-    return GateResult("C", status, checks, issues, ["structural-acceptance.json"])
+    return GateResult("C", GateStatus.PASS if all(checks.values()) else GateStatus.FAIL, checks, issues, ["structural-acceptance.json"])
 
 
 def digital_revision(document: CanonicalDocument) -> str:
@@ -193,12 +195,11 @@ def write_revision_record(record: RevisionRecord, root: Path) -> Path:
 
 
 def gate_e_revision_infrastructure(record: RevisionRecord, root: Path) -> GateResult:
-    try:
-        path = write_revision_record(record, root)
-    except FileExistsError:
-        return GateResult("E", GateStatus.FAIL, {"revision_id_unique": False}, [f"Revision already exists: {record.revision_id}"])
-    checks = {"revision_id_unique": path.is_file(), "source_hash_recorded": len(record.source_hash) == 64, "digital_revision_recorded": bool(record.digital_revision), "reviewer_recorded": bool(record.reviewer_ai), "result_recorded": record.result != "NOT_RECORDED"}
-    return GateResult("E", GateStatus.PASS if all(checks.values()) else GateStatus.FAIL, checks, [], [str(path)])
+    checks = {"revision_id_unique": not (root / record.revision_id).exists(), "source_hash_recorded": len(record.source_hash) == 64, "digital_revision_recorded": bool(record.digital_revision), "reviewer_recorded": bool(record.reviewer_ai), "result_recorded": record.result != "NOT_RECORDED"}
+    if not all(checks.values()):
+        return GateResult("E", GateStatus.FAIL, checks, ["Revision evidence is incomplete or revision ID already exists."])
+    path = write_revision_record(record, root)
+    return GateResult("E", GateStatus.PASS, checks, [], [str(path)])
 
 
 def gate_f_verification(graphical: GraphicalVerificationRecord, external: ExternalCrossCheckRecord) -> GateResult:
