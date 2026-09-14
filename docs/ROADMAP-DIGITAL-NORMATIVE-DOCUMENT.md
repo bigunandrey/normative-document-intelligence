@@ -108,65 +108,43 @@ Exit criterion: the registered DBN fixture can produce parser observations from 
 
 ### Phase 3 — External Source Discovery & Cross-Check Engine — **COMPLETE FOR CONTRACT SCOPE ✅**
 
-Implement a provider-neutral engine with separate stages:
+Implemented the provider-neutral discovery → validation → retrieval → independent parsing → aggregation → comparison → discrepancy-evidence chain, including fail-closed source integrity and parser disagreement handling. Real authoritative provider implementations and real DBN execution remain integration work.
 
-```text
-Document identity
-  → candidate discovery
-  → candidate ranking
-  → authority validation
-  → edition/amendment validation
-  → retrieval
-  → independent parsing
-  → comparison
-  → discrepancy evidence
-```
+### Phase 4 — Integrated reconciliation — **COMPLETE FOR CONTRACT SCOPE ✅**
 
 Implemented:
-- `ExternalSourceProvider` provider contract;
-- `SourceCandidate` / `ValidatedSource` source-validation contracts;
-- `ExternalDocument` and `ExternalObservationSet` evidence contracts;
-- `CrossCheckResult` and typed `DiscrepancyEvidence`;
-- fail-closed authoritative same-revision discovery;
-- deterministic comparison of supplied canonical observations against validated external canonical observations;
-- conversion of comparison differences into provenance-bound discrepancy evidence;
-- detection of missing observations, text differences, structural differences and anchor differences;
-- rejection of external comparison against a non-same-revision source;
-- fail-closed retrieval of external byte content with SHA-256 integrity verification;
-- independent external parser contract for verified retrieved bytes;
-- source-bound `ExternalParserObservation` artifacts with parser/version provenance;
-- fail-closed rejection of empty/duplicate parser configurations, tampered retrieved bytes, invalid parser output, wrong source binding and mismatched parser provenance;
-- public export of the independent external parsing API;
-- deterministic aggregation of independent external parser observations into `ExternalObservationSet`;
-- fail-closed rejection of parser disagreement rather than silently selecting one parser as truth;
-- direct `ExternalObservationSet → comparison engine` integration;
-- provider-bound fail-closed orchestration from identity/candidate discovery through retrieval, independent parsing, aggregation and comparison;
-- deterministic de-duplication of the same validated source across providers;
-- regression coverage for the complete provider-to-comparison path and parser disagreement.
+- integrated parser + external evidence view;
+- explicit blocking on parser conflicts, missing observations and external discrepancies;
+- immutable, provenance-linked `ResolutionDecision` records;
+- explicit actions: `ACCEPT_SUPPLIED`, `ACCEPT_EXTERNAL`, `MANUAL_RESOLUTION`, `REJECT`;
+- fail-closed requirement for complete one-to-one blocker disposition;
+- rejection remains blocking;
+- source-bound canonical documents are never mutated by resolution;
+- structural Gate C now consumes the resolved reconciliation outcome;
+- regression coverage for clean acceptance, unresolved blockers, explicit resolution, provenance preservation and Gate C enforcement.
 
-**Milestones recorded:** external-source discovery/validation, executable cross-document comparison, integrity-checked retrieval, independent source parsing, deterministic multi-parser aggregation, comparison handoff, and provider-level orchestration are implemented. The independent parser provenance regression was corrected in commit `768416966142d0ed9e0c5c023a2794cd86dfd175`.
+**Phase 4 status:** **COMPLETE for the implemented contract scope.** Resolution is evidence/disposition only; it does not silently rewrite normative content.
 
-**Phase 3 status:** the generic external pipeline is **COMPLETE for the implemented contract scope**. Real authoritative provider implementations and real DBN execution remain integration work and are not claimed by this milestone.
+### Phase 5 — Structural acceptance / DBN end-to-end gate — **IN PROGRESS ▶️**
 
-### Phase 4 — Integrated reconciliation — **IN PROGRESS ▶️**
+Target document: **DBN В.2.5-56:2014 зі Зміною №1 та №2**.
 
-Combine parser evidence and external-source evidence without silent correction. Every discrepancy must remain machine-readable and provenance-linked; unresolved discrepancies block structural acceptance.
+Required chain:
 
-Implemented in the current milestone:
-- integrated reconciliation view combining supplied parser decisions with external comparison evidence;
-- explicit `blocked` / `accepted` state derived from unresolved parser conflicts and external discrepancies;
-- immutable `ResolutionDecision` records with reviewer, rationale and evidence;
-- explicit resolution actions: `ACCEPT_SUPPLIED`, `ACCEPT_EXTERNAL`, `MANUAL_RESOLUTION`, `REJECT`;
-- fail-closed requirement that every parser/external blocker has exactly one resolution decision;
-- rejection remains a blocking outcome;
-- resolution records do not mutate or overwrite source-bound canonical documents;
-- regression coverage for clean acceptance, parser conflicts, external discrepancy provenance, incomplete resolution and rejection.
+```text
+source identity
+→ registered multi-parser ingestion
+→ parser reconciliation
+→ authoritative-source cross-check
+→ integrated reconciliation
+→ explicit resolution where required
+→ Gate C structural acceptance
+→ regression evidence
+```
 
-**Milestone status:** explicit reconciliation/resolution contract implemented. The next block is to connect resolution outcomes to the structural acceptance gate while preserving the immutable evidence chain.
+Fresh execution must be separately recorded from historical benchmark evidence. The full 105-page / ~22.4 MB DBN fixture is known to exist in Dropbox, but the current retrieval interface cannot provide the complete binary to this execution environment. Therefore no fresh end-to-end DBN result is claimed until the complete source bytes are available.
 
-### Phase 5 — Structural acceptance / DBN end-to-end gate
-
-Run the complete chain against **DBN В.2.5-56:2014 зі Зміною №1 та №2**. Fresh execution must be separately recorded from historical benchmark evidence.
+Current implementation task: make the DBN end-to-end gate executable from a locally/CI-accessible fixture and produce a deterministic evidence manifest that distinguishes **FRESH_EXECUTION** from **HISTORICAL_BASELINE**.
 
 ### Phase 6 — Graphical verification
 
