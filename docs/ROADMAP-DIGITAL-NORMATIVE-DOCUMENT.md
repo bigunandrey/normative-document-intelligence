@@ -143,16 +143,23 @@ Current baseline:
 - page-aware pypdf extraction exists;
 - parser observations and provenance structures exist;
 - cross-parser matching/reconciliation exists;
-- structural quality validation and verification gates exist.
+- structural quality validation and verification gates exist;
+- stable `ParserAdapter` contract exists;
+- deterministic registered parser set exists for MarkItDown, pypdf, Docling and OpenDataLoader;
+- `adapt_registered()` provides a common execution contract;
+- `adapt_all()` provides a single deterministic multi-parser execution path and fails closed when a configured parser output is missing or unknown;
+- adapter capability manifest is validated before execution;
+- regression tests cover parser registration, identity, provenance and page-boundary preservation.
 
 Remaining Phase 2 work:
 - audit and harden each adapter against the full canonical observation contract;
 - complete structural recognition for tables/rows/cells, formulas, headers/footers, footnotes and figures;
 - preserve reading order and geometry consistently across adapters;
-- expose one reproducible multi-parser ingestion API/CLI path;
-- execute the registered DBN fixture through that path;
+- execute the registered DBN fixture through the multi-parser path;
 - produce provenance-complete observation artifacts;
 - add structural regression tests for the configured parser set.
+
+**CI note:** commits introducing the registered execution path have triggered GitHub Actions; the roadmap is not to be advanced to the next phase until the current `main` head has a confirmed successful run.
 
 Exit criterion: the registered DBN fixture can produce parser observations from the configured parser set through one reproducible API/CLI path.
 
