@@ -188,31 +188,17 @@ def build_applicability_links(units: tuple[NormativeUnit, ...], lock: RevisionLo
     return tuple(links)
 
 
-def validate_applicability_links(
-    links: tuple[ApplicabilityLink, ...],
-    units: tuple[NormativeUnit, ...],
-    lock: RevisionLock,
-    *,
-    document: CanonicalDocument | None = None,
-    known_targets: Iterable[str] | Mapping[str, Any] | None = None,
-) -> tuple[bool, list[str]]:
-    """Validate applicability/type links and optionally resolve their targets.
-
-    Resolution is explicit: this function never invents targets from prose. When
-    ``known_targets`` is supplied, every applicability target must be present in it.
-    """
+def validate_applicability_links(links: tuple[ApplicabilityLink, ...], units: tuple[NormativeUnit, ...], lock: RevisionLock, *, document: CanonicalDocument | None = None, known_targets: Iterable[str] | Mapping[str, Any] | None = None) -> tuple[bool, list[str]]:
     issues: list[str] = []
     seen: set[str] = set()
     units_by_id = {unit.unit_id: unit for unit in units}
     nodes_by_id = {node.node_id: node for node in document.nodes} if document is not None else {}
     resolved_targets = set(known_targets.keys()) if isinstance(known_targets, Mapping) else (set(known_targets) if known_targets is not None else None)
-
     for unit in units:
-        if unit.unit_id in units_by_id and unit.applicability and not unit.subject_type:
+        if unit.applicability and not unit.subject_type:
             issues.append(f"Unit {unit.unit_id} has applicability but no subject type")
         if unit.document_id != lock.document_id or unit.source_sha256 != lock.source_sha256 or unit.digital_revision != lock.digital_revision:
             issues.append(f"Unit {unit.unit_id} is not bound to the locked revision")
-
     for link in links:
         if link.link_id in seen:
             issues.append(f"Duplicate applicability link: {link.link_id}")
@@ -240,7 +226,6 @@ def validate_applicability_links(
             issues.append(f"Applicability target is unresolved: {link.target}")
         if link.relation != "applies_to":
             issues.append(f"Unsupported applicability relation: {link.relation}")
-
     expected = {(unit.unit_id, target) for unit in units for target in unit.applicability}
     actual = {(link.unit_id, link.target) for link in links}
     for unit_id, target in sorted(expected - actual):
@@ -266,6 +251,47 @@ def build_rule_registry(document: CanonicalDocument, lock: RevisionLock) -> tupl
         payload = f"{document.document_id}|{node.node_id}|{kind}|{expression}"
         entries.append(RuleRegistryEntry("rule-" + hashlib.sha256(payload.encode("utf-8")).hexdigest()[:24], document.document_id, document.source_sha256, revision, node.node_id, node.anchor.page if node.anchor else None, kind, expression, expression, dict(node.attributes)))
     return tuple(entries)
+
+
+def validate_rule_registry(entries: tuple[RuleRegistryEntry, ...], document: CanonicalDocument, lock: RevisionLock) -> tuple[bool, list[str]]:
+    issues: list[str] = []
+    seen: set[str] = set()
+    nodes = {node.node_id: node for node in document.nodes}
+    expected: set[tuple[str, str]] = set()
+    for node in document.nodes:
+        if node.node_type in {NodeType.TABLE, NodeType.TABLE_CELL, NodeType.FORMULA} and " ".join(node.text.split()):
+            expected.add((node.node_id, "table" if node.node_type in {NodeType.TABLE, NodeType.TABLE_CELL} else "formula"))
+    actual: set[tuple[str, str]] = set()
+    for entry in entries:
+        if entry.rule_id in seen:
+            issues.append(f"Duplicate rule: {entry.rule_id}")
+        seen.add(entry.rule_id)
+        if entry.document_id != lock.document_id or entry.source_sha256 != lock.source_sha256 or entry.digital_revision != lock.digital_revision:
+            issues.append(f"Rule {entry.rule_id} is not bound to the locked revision")
+        if not entry.node_id or not entry.rule_kind or not entry.expression or not entry.source_text:
+            issues.append(f"Rule {entry.rule_id} is incomplete")
+            continue
+        node = nodes.get(entry.node_id)
+        if node is None:
+            issues.append(f"Rule {entry.rule_id} references unknown node {entry.node_id}")
+            continue
+        page = node.anchor.page if node.anchor else None
+        if entry.anchor_page != page:
+            issues.append(f"Rule {entry.rule_id} has an invalid source page")
+        canonical_expression = " ".join(node.text.split())
+        if entry.expression != canonical_expression or entry.source_text != canonical_expression:
+            issues.append(f"Rule {entry.rule_id} expression does not match canonical source text")
+        expected_kind = "table" if node.node_type in {NodeType.TABLE, NodeType.TABLE_CELL} else "formula" if node.node_type == NodeType.FORMULA else ""
+        if entry.rule_kind != expected_kind:
+            issues.append(f"Rule {entry.rule_id} has invalid rule kind")
+        actual.add((entry.node_id, entry.rule_kind))
+    for item in sorted(expected - actual):
+        issues.append(f"Missing rule registry entry: {item[0]}")
+    for item in sorted(actual - expected):
+        issues.append(f"Unexpected rule registry entry: {item[0]}")
+    if document.document_id != lock.document_id or document.source_sha256 != lock.source_sha256:
+        issues.append("Rule registry document is not bound to the locked source")
+    return not issues, issues
 
 
 def build_dependency_graph(units: tuple[NormativeUnit, ...], lock: RevisionLock) -> SemanticDependencyGraph:
