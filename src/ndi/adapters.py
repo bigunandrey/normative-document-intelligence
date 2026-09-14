@@ -5,8 +5,9 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from .canonical import BoundingBox, CanonicalDocument, CanonicalNode, NodeType, SourceAnchor, stable_document_id
+from .canonical import BoundingBox, CanonicalDocument, CanonicalNode, NodeType, SourceAnchor
 from .observations import RawObservation, add_observation
+from .canonical import stable_document_id
 
 
 def _text(value: Any) -> str:
@@ -151,7 +152,7 @@ def from_markitdown(text: str, *, source_name: str, source_sha256: str,
 
 
 def from_pypdf_pages(pages: list[str], *, source_name: str, source_sha256: str,
-                     version: str = "unknown") -> CanonicalDocument:
+                     version: str = "unknown", page_count: int | None = None) -> CanonicalDocument:
     """Create page-aware text observations directly from PDF page boundaries."""
     records: list[dict[str, Any]] = []
     for page_number, text in enumerate(pages, 1):
