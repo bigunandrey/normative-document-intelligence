@@ -97,7 +97,7 @@ def new_document(source_name: str, source_sha256: str, page_count: int | None, p
 
 
 def _expand_structural_record(item: Mapping[str, Any]) -> list[Mapping[str, Any]]:
-    """Expand nested structures with deterministic local parent ordinals."""
+    """Expand nested structures with parent ordinals local to this record."""
     result: list[Mapping[str, Any]] = [item]
     typ = _node_type(item.get("type", item.get("element_type", item.get("kind"))))
     if typ == NodeType.TABLE:
@@ -143,7 +143,8 @@ def from_records(
     expanded: list[Mapping[str, Any]] = []
     for item in records:
         start = len(expanded)
-        for child_index, child in enumerate(_expand_structural_record(item)):
+        children = _expand_structural_record(item)
+        for child_index, child in enumerate(children):
             child_data = dict(child)
             if child_index > 0 and child_data.get("parent_ordinal") is not None:
                 child_data["parent_ordinal"] = int(child_data["parent_ordinal"]) + start
