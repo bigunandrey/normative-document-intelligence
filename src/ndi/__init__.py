@@ -18,6 +18,7 @@ from .dbn_gate import DBNFixtureEvidence, EvidenceMode, build_dbn_fixture_eviden
 from .graphical_verification import GraphicalVerificationScope, validate_graphical_verification
 from .revision_lock import PROTOCOL_VERSION, RevisionLock, build_revision_lock, persist_revision_lock, verify_revision_lock
 from .ai_verification import AIVerificationRecord, build_ai_verification, build_evidence_hash, persist_ai_verification, validate_ai_verifications
+from .final_acceptance import final_acceptance_with_ai
 from .extractor import ExtractionError, extract_pdf, extract_pdf_evidence, markitdown_version, pdf_page_text, pypdf_version
 from .validator import Quality, RecognitionAudit, RecognitionIssue, audit_document
 from .reconciliation import ReconciliationDecision, ReconciliationReport, reconcile_document
@@ -37,7 +38,7 @@ __all__ = [
     "IntegratedReconciliationReport", "ResolutionAction", "ResolutionDecision", "ResolvedReconciliation", "reconcile_with_external", "resolve_reconciliation",
     "DBNFixtureEvidence", "EvidenceMode", "build_dbn_fixture_evidence", "dbn_structural_gate", "write_dbn_fixture_evidence",
     "GraphicalVerificationScope", "validate_graphical_verification", "PROTOCOL_VERSION", "RevisionLock", "build_revision_lock", "persist_revision_lock", "verify_revision_lock",
-    "AIVerificationRecord", "build_ai_verification", "build_evidence_hash", "persist_ai_verification", "validate_ai_verifications",
+    "AIVerificationRecord", "build_ai_verification", "build_evidence_hash", "persist_ai_verification", "validate_ai_verifications", "final_acceptance_with_ai",
     "ExtractionError", "extract_pdf", "extract_pdf_evidence", "markitdown_version", "pdf_page_text", "pypdf_version",
     "Quality", "RecognitionAudit", "RecognitionIssue", "audit_document", "ReconciliationDecision", "ReconciliationReport", "reconcile_document",
     "AcceptanceEvidence", "ExternalCrossCheckRecord", "GateResult", "GateStatus", "GraphicalVerificationRecord", "RevisionRecord",
