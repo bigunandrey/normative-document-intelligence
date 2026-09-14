@@ -91,6 +91,19 @@ class SemanticDependencyGraph:
     dependencies: tuple[SemanticDependency, ...]
 
 
+@dataclass(frozen=True)
+class SemanticEvaluation:
+    evaluation_id: str
+    document_id: str
+    source_sha256: str
+    digital_revision: str
+    unit_id: str
+    result: str
+    applicability_state: str
+    condition_state: str
+    reason: str
+
+
 def _unit_id(document_id: str, node_id: str, ordinal: int, text: str) -> str:
     payload = f"{document_id}|{node_id}|{ordinal}|{text}"
     return "unit-" + hashlib.sha256(payload.encode("utf-8")).hexdigest()[:24]
@@ -214,6 +227,38 @@ def validate_dependency_graph(graph: SemanticDependencyGraph, lock: RevisionLock
         if not dep.source_unit_id or not dep.target or not dep.relation or not dep.evidence_text:
             issues.append(f"Dependency {dep.dependency_id} is incomplete")
     return not issues, issues
+
+
+def evaluate_normative_unit(unit: NormativeUnit, *, applicability: bool | None = True, condition: bool | None = True) -> SemanticEvaluation:
+    if not unit.unit_id or not unit.document_id or not unit.source_sha256 or not unit.digital_revision:
+        raise SemanticInterpretationError("incomplete normative unit")
+    if applicability is None:
+        result, state, reason = "UNRESOLVED", "UNKNOWN", "applicability is unresolved"
+    elif not applicability:
+        result, state, reason = "NOT_APPLICABLE", "FALSE", "normative unit is not applicable"
+    elif condition is None:
+        result, state, reason = "UNRESOLVED", "UNKNOWN", "condition is unresolved"
+    elif condition is False:
+        result, state, reason = "INACTIVE", "FALSE", "normative condition is false"
+    else:
+        state = "TRUE"
+        result = {"REQUIREMENT": "REQUIREMENT_ACTIVE", "PROHIBITION": "PROHIBITION_ACTIVE", "RECOMMENDATION": "RECOMMENDATION_ACTIVE", "PERMISSION": "PERMISSION_ACTIVE"}.get(unit.modality)
+        if result is None:
+            raise SemanticInterpretationError("unsupported normative modality")
+        reason = "normative applicability and condition are satisfied"
+    payload = f"{unit.unit_id}|{result}|{state}|{reason}"
+    return SemanticEvaluation("eval-" + hashlib.sha256(payload.encode("utf-8")).hexdigest()[:24], unit.document_id, unit.source_sha256, unit.digital_revision, unit.unit_id, result, "TRUE" if applicability else "FALSE" if applicability is False else "UNKNOWN", state, reason)
+
+
+def evaluate_normative_units(units: tuple[NormativeUnit, ...], lock: RevisionLock, *, applicability: dict[str, bool | None] | None = None, conditions: dict[str, bool | None] | None = None) -> tuple[SemanticEvaluation, ...]:
+    applicability = applicability or {}
+    conditions = conditions or {}
+    results: list[SemanticEvaluation] = []
+    for unit in sorted(units, key=lambda u: u.unit_id):
+        if unit.document_id != lock.document_id or unit.source_sha256 != lock.source_sha256 or unit.digital_revision != lock.digital_revision:
+            raise ValueError("semantic evaluation is not bound to the locked revision")
+        results.append(evaluate_normative_unit(unit, applicability=applicability.get(unit.unit_id, True), condition=conditions.get(unit.unit_id, True)))
+    return tuple(results)
 
 
 def validate_normative_units(units: tuple[NormativeUnit, ...], lock: RevisionLock) -> tuple[bool, list[str]]:
