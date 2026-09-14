@@ -172,7 +172,10 @@ def gate_c_structural_acceptance(
     if integrated_reconciliation is not None:
         resolved = integrated_reconciliation.accepted
     checks = {
-        "recognition_quality_pass": audit.quality == Quality.PASS,
+        # Optional recognition evidence (bbox, character spans, confidence) may
+        # be absent without blocking acceptance; structural/provenance errors
+        # still produce Quality.FAIL and therefore block Gate C.
+        "recognition_quality_pass": audit.passed,
         "reconciliation_clean": not blocking or resolved,
         "source_hash_valid": len(document.source_sha256) == 64,
     }
