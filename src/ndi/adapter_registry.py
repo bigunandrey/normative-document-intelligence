@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable, Mapping
 
-from .adapter_contract import AdapterCapabilities, ParserAdapter, validate_adapter_capabilities
+from .adapter_contract import AdapterCapabilities, ParserAdapter, validate_adapter_capabilities, validate_adapter_output
 from .adapters import from_docling_records, from_markitdown, from_opendataloader_records, from_pypdf_pages
 from .canonical import CanonicalDocument
 
@@ -27,13 +27,15 @@ class RegisteredAdapter:
         source_sha256: str,
         page_count: int | None = None,
     ) -> CanonicalDocument:
-        return self._adapt(
+        document = self._adapt(
             source,
             source_name=source_name,
             source_sha256=source_sha256,
             page_count=page_count,
             version=self.version,
         )
+        validate_adapter_output(document, parser=self.name, version=self.version)
+        return document
 
 
 def default_adapters(
