@@ -57,10 +57,10 @@ Goal: transform the accepted canonical document into deterministic, source-bound
 - explicit dependency/cross-reference graph;
 - deterministic source-bound semantic evaluation model;
 - fail-closed handling of unresolved applicability/conditions during evaluation;
+- amendment/deletion semantics, with explicit source-bound ADD/REPLACE/DELETE actions and fail-closed ambiguity handling;
 - regression coverage for the implemented semantic chain.
 
 **Remaining:**
-- amendment/deletion semantics;
 - stronger validation and resolution of applicability/type links;
 - stronger table/formula semantic interpretation and evaluation;
 - dependency/cross-reference target resolution against the document graph;
