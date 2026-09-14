@@ -15,7 +15,7 @@ from .reconciliation import ReconciliationReport, reconcile_document
 from .validator import Quality, audit_document
 
 if TYPE_CHECKING:
-    from .integrated_reconciliation import IntegratedReconciliationReport
+    from .integrated_reconciliation import IntegratedReconciliationReport, ResolvedReconciliation
 
 
 class GateStatus(StrEnum):
@@ -163,7 +163,7 @@ def gate_b_reconciliation(document: CanonicalDocument) -> tuple[GateResult, Reco
 def gate_c_structural_acceptance(
     document: CanonicalDocument,
     reconciliation: ReconciliationReport,
-    integrated_reconciliation: IntegratedReconciliationReport | None = None,
+    integrated_reconciliation: IntegratedReconciliationReport | ResolvedReconciliation | None = None,
 ) -> GateResult:
     """Close structural acceptance only when integrated reconciliation is resolved."""
     audit = audit_document(document)
@@ -177,8 +177,11 @@ def gate_c_structural_acceptance(
     if blocking:
         issues.append(f"{len(blocking)} reconciliation decisions are not AGREED.")
     if integrated_reconciliation is not None:
-        checks["integrated_reconciliation_resolved"] = integrated_reconciliation.accepted
-        if not integrated_reconciliation.accepted:
+        resolved = integrated_reconciliation.accepted
+        if hasattr(integrated_reconciliation, "integrated"):
+            resolved = integrated_reconciliation.accepted
+        checks["integrated_reconciliation_resolved"] = resolved
+        if not resolved:
             issues.append("Integrated reconciliation has unresolved parser or external evidence blockers.")
     return GateResult("C", GateStatus.PASS if all(checks.values()) else GateStatus.FAIL, checks, issues, ["structural-acceptance.json"])
 
