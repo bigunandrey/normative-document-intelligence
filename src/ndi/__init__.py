@@ -19,7 +19,7 @@ from .graphical_verification import GraphicalVerificationScope, validate_graphic
 from .revision_lock import PROTOCOL_VERSION, RevisionLock, build_revision_lock, persist_revision_lock, verify_revision_lock
 from .ai_verification import AIVerificationRecord, build_ai_verification, build_evidence_hash, persist_ai_verification, validate_ai_verifications
 from .final_acceptance import final_acceptance_with_ai
-from .normative_semantics import ApplicabilityLink, NormativeUnit, RuleRegistryEntry, SemanticDependency, SemanticDependencyGraph, SemanticInterpretationError, build_applicability_links, build_dependency_graph, build_normative_units, build_rule_registry, decompose_normative_node, validate_dependency_graph, validate_normative_units
+from .normative_semantics import ApplicabilityLink, NormativeUnit, RuleRegistryEntry, SemanticDependency, SemanticDependencyGraph, SemanticEvaluation, SemanticInterpretationError, build_applicability_links, build_dependency_graph, build_normative_units, build_rule_registry, decompose_normative_node, evaluate_normative_unit, evaluate_normative_units, validate_dependency_graph, validate_normative_units
 from .extractor import ExtractionError, extract_pdf, extract_pdf_evidence, markitdown_version, pdf_page_text, pypdf_version
 from .validator import Quality, RecognitionAudit, RecognitionIssue, audit_document
 from .reconciliation import ReconciliationDecision, ReconciliationReport, reconcile_document
@@ -40,7 +40,7 @@ __all__ = [
     "DBNFixtureEvidence", "EvidenceMode", "build_dbn_fixture_evidence", "dbn_structural_gate", "write_dbn_fixture_evidence",
     "GraphicalVerificationScope", "validate_graphical_verification", "PROTOCOL_VERSION", "RevisionLock", "build_revision_lock", "persist_revision_lock", "verify_revision_lock",
     "AIVerificationRecord", "build_ai_verification", "build_evidence_hash", "persist_ai_verification", "validate_ai_verifications", "final_acceptance_with_ai",
-    "NormativeUnit", "ApplicabilityLink", "RuleRegistryEntry", "SemanticDependency", "SemanticDependencyGraph", "SemanticInterpretationError", "build_normative_units", "decompose_normative_node", "validate_normative_units", "build_applicability_links", "build_rule_registry", "build_dependency_graph", "validate_dependency_graph",
+    "NormativeUnit", "ApplicabilityLink", "RuleRegistryEntry", "SemanticDependency", "SemanticDependencyGraph", "SemanticEvaluation", "SemanticInterpretationError", "build_normative_units", "decompose_normative_node", "validate_normative_units", "build_applicability_links", "build_rule_registry", "build_dependency_graph", "validate_dependency_graph", "evaluate_normative_unit", "evaluate_normative_units",
     "ExtractionError", "extract_pdf", "extract_pdf_evidence", "markitdown_version", "pdf_page_text", "pypdf_version",
     "Quality", "RecognitionAudit", "RecognitionIssue", "audit_document", "ReconciliationDecision", "ReconciliationReport", "reconcile_document",
     "AcceptanceEvidence", "ExternalCrossCheckRecord", "GateResult", "GateStatus", "GraphicalVerificationRecord", "RevisionRecord",
