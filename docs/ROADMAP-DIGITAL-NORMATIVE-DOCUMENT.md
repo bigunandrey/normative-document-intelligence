@@ -131,11 +131,12 @@ Implemented:
 - deterministic comparison of supplied canonical observations against validated external canonical observations;
 - conversion of comparison differences into provenance-bound discrepancy evidence;
 - detection of missing observations, text differences, structural differences and anchor differences;
-- rejection of external comparison against a non-same-revision source.
+- rejection of external comparison against a non-same-revision source;
+- fail-closed retrieval of external byte content with SHA-256 integrity verification.
 
-**Milestone recorded:** external-source discovery/validation and the first executable cross-document comparison layer are implemented and covered by regression tests.
+**Milestones recorded:** external-source discovery/validation, executable cross-document comparison, and integrity-checked retrieval contracts are implemented and covered by regression tests.
 
-**Next Phase 3 work:** implement provider retrieval/integrity verification and independent external parsing so the comparison layer can operate on retrieved authoritative documents rather than only pre-built canonical documents.
+**Next Phase 3 work:** implement independent parsing of retrieved authoritative documents and bind parser output into `ExternalObservationSet`, then connect that result directly to the comparison engine.
 
 Exit criterion: given a document identity, the engine can return validated source candidates and explicit reasons when no authoritative match is available, then retrieve a validated source and produce independently parsed comparison evidence.
 
