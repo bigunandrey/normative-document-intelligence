@@ -48,3 +48,22 @@ def test_nested_list_items_preserve_parent_link():
     assert [n.node_type for n in doc.nodes] == [NodeType.LIST, NodeType.LIST_ITEM, NodeType.LIST_ITEM]
     assert doc.nodes[1].parent_id == doc.nodes[0].node_id
     assert doc.nodes[2].parent_id == doc.nodes[0].node_id
+
+
+def test_structural_parent_links_remain_local_across_multiple_top_level_records():
+    doc = from_records(
+        [
+            {"type": "table", "page": 1, "rows": [{"text": "r1", "cells": [{"text": "a"}]}]},
+            {"type": "list", "page": 1, "items": [{"text": "one"}]},
+            {"type": "paragraph", "text": "child", "page": 1, "parent_ordinal": 0},
+        ],
+        source_name="test.pdf", source_sha256=SHA, page_count=1, parser="test", version="1.0",
+    )
+    assert [n.node_type for n in doc.nodes] == [
+        NodeType.TABLE, NodeType.TABLE_ROW, NodeType.TABLE_CELL,
+        NodeType.LIST, NodeType.LIST_ITEM, NodeType.PARAGRAPH,
+    ]
+    assert doc.nodes[1].parent_id == doc.nodes[0].node_id
+    assert doc.nodes[2].parent_id == doc.nodes[1].node_id
+    assert doc.nodes[4].parent_id == doc.nodes[3].node_id
+    assert doc.nodes[5].parent_id == doc.nodes[0].node_id
