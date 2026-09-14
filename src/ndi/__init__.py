@@ -15,6 +15,7 @@ from .external_parsing import ExternalParser, ExternalParserObservation, aggrega
 from .external_pipeline import ExternalPipelineResult, run_external_cross_check
 from .integrated_reconciliation import IntegratedReconciliationReport, ResolutionAction, ResolutionDecision, ResolvedReconciliation, reconcile_with_external, resolve_reconciliation
 from .dbn_gate import DBNFixtureEvidence, EvidenceMode, build_dbn_fixture_evidence, dbn_structural_gate, write_dbn_fixture_evidence
+from .graphical_verification import GraphicalVerificationScope, validate_graphical_verification
 from .extractor import ExtractionError, extract_pdf, extract_pdf_evidence, markitdown_version, pdf_page_text, pypdf_version
 from .validator import Quality, RecognitionAudit, RecognitionIssue, audit_document
 from .reconciliation import ReconciliationDecision, ReconciliationReport, reconcile_document
@@ -33,6 +34,7 @@ __all__ = [
     "RetrievedSource", "retrieve_validated", "verify_retrieved_bytes", "ExternalParser", "ExternalParserObservation", "aggregate_external_observations", "parse_retrieved_external", "ExternalPipelineResult", "run_external_cross_check",
     "IntegratedReconciliationReport", "ResolutionAction", "ResolutionDecision", "ResolvedReconciliation", "reconcile_with_external", "resolve_reconciliation",
     "DBNFixtureEvidence", "EvidenceMode", "build_dbn_fixture_evidence", "dbn_structural_gate", "write_dbn_fixture_evidence",
+    "GraphicalVerificationScope", "validate_graphical_verification",
     "ExtractionError", "extract_pdf", "extract_pdf_evidence", "markitdown_version", "pdf_page_text", "pypdf_version",
     "Quality", "RecognitionAudit", "RecognitionIssue", "audit_document", "ReconciliationDecision", "ReconciliationReport", "reconcile_document",
     "AcceptanceEvidence", "ExternalCrossCheckRecord", "GateResult", "GateStatus", "GraphicalVerificationRecord", "RevisionRecord",
