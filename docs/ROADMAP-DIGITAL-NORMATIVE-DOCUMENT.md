@@ -106,7 +106,7 @@ Implemented baseline:
 
 Exit criterion: the registered DBN fixture can produce parser observations from the configured parser set through one reproducible API/CLI path, with provenance-complete observations and structural regression coverage.
 
-### Phase 3 — External Source Discovery & Cross-Check Engine — **IN PROGRESS 🔄**
+### Phase 3 — External Source Discovery & Cross-Check Engine — **COMPLETE FOR CONTRACT SCOPE ✅**
 
 Implement a provider-neutral engine with separate stages:
 
@@ -148,11 +148,21 @@ Implemented:
 
 **Phase 3 status:** the generic external pipeline is **COMPLETE for the implemented contract scope**. Real authoritative provider implementations and real DBN execution remain integration work and are not claimed by this milestone.
 
-**Transition:** move to **Phase 4 — Integrated reconciliation**. The next implementation must combine supplied multi-parser evidence and external-source evidence, preserve every discrepancy as provenance-linked machine-readable evidence, and block acceptance on unresolved conflicts.
-
 ### Phase 4 — Integrated reconciliation — **IN PROGRESS ▶️**
 
 Combine parser evidence and external-source evidence without silent correction. Every discrepancy must remain machine-readable and provenance-linked; unresolved discrepancies block structural acceptance.
+
+Implemented in the current milestone:
+- integrated reconciliation view combining supplied parser decisions with external comparison evidence;
+- explicit `blocked` / `accepted` state derived from unresolved parser conflicts and external discrepancies;
+- immutable `ResolutionDecision` records with reviewer, rationale and evidence;
+- explicit resolution actions: `ACCEPT_SUPPLIED`, `ACCEPT_EXTERNAL`, `MANUAL_RESOLUTION`, `REJECT`;
+- fail-closed requirement that every parser/external blocker has exactly one resolution decision;
+- rejection remains a blocking outcome;
+- resolution records do not mutate or overwrite source-bound canonical documents;
+- regression coverage for clean acceptance, parser conflicts, external discrepancy provenance, incomplete resolution and rejection.
+
+**Milestone status:** explicit reconciliation/resolution contract implemented. The next block is to connect resolution outcomes to the structural acceptance gate while preserving the immutable evidence chain.
 
 ### Phase 5 — Structural acceptance / DBN end-to-end gate
 
