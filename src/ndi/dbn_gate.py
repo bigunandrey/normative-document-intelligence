@@ -2,12 +2,10 @@ from __future__ import annotations
 
 """Fail-closed DBN end-to-end structural gate and evidence manifest."""
 
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from enum import StrEnum
-import hashlib
 import json
 from pathlib import Path
-from typing import Mapping
 
 from .canonical import CanonicalDocument
 from .reconciliation import ReconciliationReport
@@ -77,14 +75,47 @@ def dbn_structural_gate(
     evidence: DBNFixtureEvidence,
 ) -> GateResult:
     if evidence.source_sha256 != document.source_sha256:
-        return GateResult("DBN", GateStatus.FAIL, {"source_hash_matches": False}, ["Fixture evidence source SHA-256 does not match canonical document."])
+        return GateResult(
+            "DBN",
+            GateStatus.FAIL,
+            {"source_hash_matches": False},
+            ["Fixture evidence source SHA-256 does not match canonical document."],
+        )
     if evidence.page_count != document.page_count:
-        return GateResult("DBN", GateStatus.FAIL, {"page_count_matches": False}, ["Fixture evidence page count does not match canonical document."])
+        return GateResult(
+            "DBN",
+            GateStatus.FAIL,
+            {"page_count_matches": False},
+            ["Fixture evidence page count does not match canonical document."],
+        )
     if evidence.mode == EvidenceMode.HISTORICAL_BASELINE:
-        return GateResult("DBN", GateStatus.FAIL, {"fresh_execution": False}, ["Historical baseline cannot satisfy the fresh DBN end-to-end gate."])
+        return GateResult(
+            "DBN",
+            GateStatus.FAIL,
+            {"fresh_execution": False},
+            ["Historical baseline cannot satisfy the fresh DBN end-to-end gate."],
+        )
     if not evidence.regression_verified:
-        return GateResult("DBN", GateStatus.FAIL, {"regression_verified": False}, ["DBN regression evidence is missing."])
+        return GateResult(
+            "DBN",
+            GateStatus.FAIL,
+            {"regression_verified": False},
+            ["DBN regression evidence is missing."],
+        )
     result = gate_c_structural_acceptance(document, reconciliation)
     checks = dict(result.checks)
-    checks.update({"fresh_execution": True, "fixture_identity": True, "page_count": True, "regression_verified": True})
-    return GateResult("DBN", result.status, checks, result.issues, result.artifacts + ["dbn-fixture-evidence.json"])
+    checks.update(
+        {
+            "fresh_execution": True,
+            "fixture_identity": True,
+            "page_count": True,
+            "regression_verified": True,
+        }
+    )
+    return GateResult(
+        "DBN",
+        result.status,
+        checks,
+        result.issues,
+        result.artifacts + ["dbn-fixture-evidence.json"],
+    )
