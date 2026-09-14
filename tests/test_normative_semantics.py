@@ -1,7 +1,8 @@
 import pytest
 
-from ndi import BoundingBox, CanonicalDocument, CanonicalNode, NodeType, SourceAnchor, build_applicability_links, build_dependency_graph, build_normative_units, build_revision_lock, build_rule_registry, evaluate_normative_unit, evaluate_normative_units, validate_dependency_graph, validate_normative_units
+from ndi import BoundingBox, CanonicalDocument, CanonicalNode, NodeType, SourceAnchor, build_applicability_links, build_amendment_actions, build_dependency_graph, build_normative_units, build_revision_lock, build_rule_registry, evaluate_normative_unit, evaluate_normative_units, validate_amendment_actions, validate_dependency_graph, validate_normative_units
 from ndi.normative_semantics import SemanticInterpretationError, decompose_normative_node
+from ndi.amendment_semantics import AmendmentInterpretationError
 
 SHA = "a" * 64
 
@@ -101,3 +102,35 @@ def test_normative_evaluation_is_deterministic_and_fail_closed():
     assert evaluate_normative_unit(unit, applicability=None).result == "UNRESOLVED"
     assert evaluate_normative_unit(unit, condition=None).result == "UNRESOLVED"
     assert evaluate_normative_units((unit,), lock) == (active,)
+
+
+def test_delete_amendment_is_explicit_and_source_bound():
+    d = doc("Delete clause 5.2.", attributes={"deletes": "clause:5.2"})
+    lock = build_revision_lock(d)
+    actions = build_amendment_actions(d, lock)
+    assert len(actions) == 1
+    assert actions[0].action == "DELETE"
+    assert actions[0].target == "clause:5.2"
+    assert actions[0].replacement_text == ""
+    assert validate_amendment_actions(actions, lock) == (True, [])
+
+
+def test_replace_amendment_requires_explicit_replacement_text():
+    d = doc("Replace clause 5.2.", attributes={"replaces": "clause:5.2", "replacement_text": "The system shall provide detection."})
+    lock = build_revision_lock(d)
+    actions = build_amendment_actions(d, lock)
+    assert actions[0].action == "REPLACE"
+    assert actions[0].replacement_text == "The system shall provide detection."
+    assert validate_amendment_actions(actions, lock) == (True, [])
+
+
+def test_ambiguous_amendment_action_fails_closed():
+    d = doc("Amend clauses.", attributes={"deletes": "clause:5.2", "replaces": "clause:5.3"})
+    with pytest.raises(AmendmentInterpretationError):
+        build_amendment_actions(d, build_revision_lock(d))
+
+
+def test_replacement_without_text_fails_closed():
+    d = doc("Replace clause 5.2.", attributes={"replaces": "clause:5.2"})
+    with pytest.raises(AmendmentInterpretationError):
+        build_amendment_actions(d, build_revision_lock(d))
