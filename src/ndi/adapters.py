@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from .canonical import BoundingBox, CanonicalDocument, NodeType, SourceAnchor, stable_document_id
+from .canonical import BoundingBox, CanonicalDocument, CanonicalNode, NodeType, SourceAnchor, stable_document_id
 from .observations import RawObservation, add_observation
 
 
@@ -30,7 +30,7 @@ def _bbox(value: Any) -> BoundingBox | None:
         if all(k in value for k in ("x", "y", "width", "height")):
             x, y, w, h = (float(value[k]) for k in ("x", "y", "width", "height"))
             return BoundingBox(x, y, x + w, y + h)
-        for key in ("bbox", "bounding_box", "boundingBox"):
+        for key in ("bbox", "bounding_box", "boundingBox", "prov_bbox"):
             if key in value:
                 return _bbox(value[key])
     if isinstance(value, (list, tuple)) and len(value) == 4:
@@ -39,10 +39,11 @@ def _bbox(value: Any) -> BoundingBox | None:
 
 
 def _page(item: Mapping[str, Any]) -> int | None:
-    for key in ("page", "page_no", "page_number", "pageNo", "page_num"):
+    for key in ("page", "page_no", "page_number", "pageNo", "page_num", "page_index"):
         if key in item:
             try:
-                return int(item[key])
+                value = int(item[key])
+                return value + 1 if key == "page_index" and value >= 0 else value
             except (TypeError, ValueError):
                 return None
     prov = item.get("prov", item.get("provenance"))
@@ -54,7 +55,7 @@ def _page(item: Mapping[str, Any]) -> int | None:
 
 
 def _anchor(item: Mapping[str, Any]) -> SourceAnchor:
-    return SourceAnchor(page=_page(item), bbox=_bbox(item))
+    return SourceAnchor(page=_page(item), bbox=_bbox(item), char_start=item.get("char_start"), char_end=item.get("char_end"))
 
 
 def _node_type(value: Any) -> NodeType:
@@ -73,8 +74,7 @@ def _node_type(value: Any) -> NodeType:
 
 def new_document(source_name: str, source_sha256: str, page_count: int | None, parser: str, version: str) -> CanonicalDocument:
     return CanonicalDocument(document_id=stable_document_id(source_sha256), source_name=source_name,
-                             source_sha256=source_sha256, page_count=page_count,
-                             parser_versions={parser: version})
+                             source_sha256=source_sha256, page_count=page_count, parser_versions={parser: version})
 
 
 def from_records(records: list[Mapping[str, Any]], *, source_name: str, source_sha256: str,
@@ -103,7 +103,7 @@ def from_records(records: list[Mapping[str, Any]], *, source_name: str, source_s
 
 def from_markitdown(text: str, *, source_name: str, source_sha256: str,
                     page_count: int | None, version: str = "unknown") -> CanonicalDocument:
-    """Represent Markdown as low-provenance evidence; never fabricate page anchors."""
+    """Represent Markdown as evidence; never fabricate page anchors."""
     records = []
     for line_no, line in enumerate(text.splitlines(), 1):
         value = line.strip()
@@ -113,3 +113,31 @@ def from_markitdown(text: str, *, source_name: str, source_sha256: str,
         records.append({"type": typ.value, "text": value, "source_line": line_no})
     return from_records(records, source_name=source_name, source_sha256=source_sha256,
                         page_count=page_count, parser="markitdown", version=version)
+
+
+def from_pypdf_pages(pages: list[str], *, source_name: str, source_sha256: str,
+                     version: str = "unknown") -> CanonicalDocument:
+    """Create page-aware text observations directly from PDF page boundaries."""
+    records: list[dict[str, Any]] = []
+    for page_number, text in enumerate(pages, 1):
+        records.append({"type": NodeType.PAGE.value, "text": "", "page": page_number})
+        for line in text.splitlines():
+            value = line.strip()
+            if value:
+                records.append({"type": NodeType.PARAGRAPH.value, "text": value, "page": page_number})
+    return from_records(records, source_name=source_name, source_sha256=source_sha256,
+                        page_count=len(pages), parser="pypdf", version=version)
+
+
+def from_docling_records(records: list[Mapping[str, Any]], *, source_name: str, source_sha256: str,
+                         page_count: int | None, version: str = "unknown") -> CanonicalDocument:
+    """Adapt Docling-exported records without promoting its classification to truth."""
+    return from_records(records, source_name=source_name, source_sha256=source_sha256,
+                        page_count=page_count, parser="docling", version=version)
+
+
+def from_opendataloader_records(records: list[Mapping[str, Any]], *, source_name: str, source_sha256: str,
+                                page_count: int | None, version: str = "unknown") -> CanonicalDocument:
+    """Adapt OpenDataLoader records without parser-specific semantics leaking into NDI."""
+    return from_records(records, source_name=source_name, source_sha256=source_sha256,
+                        page_count=page_count, parser="opendataloader", version=version)
