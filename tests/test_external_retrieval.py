@@ -2,8 +2,9 @@ import hashlib
 
 import pytest
 
-from ndi import DocumentIdentity, SourceCandidate, SourceType, ValidatedSource
+from ndi import CanonicalDocument, DocumentIdentity, SourceCandidate, SourceType, ValidatedSource
 from ndi.external_retrieval import retrieve_validated, verify_retrieved_bytes
+from ndi.external_parsing import parse_retrieved_external
 from ndi.source_registry import Compatibility
 from ndi.external_sources import ExternalDocument
 
@@ -62,3 +63,37 @@ def test_retrieve_validated_requires_same_revision_and_bytes():
 
     with pytest.raises(ValueError, match="byte content"):
         retrieve_validated(BadProvider(b"ignored"), source(b"pdf"))
+
+
+class Parser:
+    name = "independent"
+    version = "1.0"
+
+    def parse(self, content, *, source_name, source_sha256):
+        return CanonicalDocument(
+            "external-test", source_name, source_sha256, 1, [], {self.name: self.version}
+        )
+
+
+def test_independent_external_parser_is_source_bound():
+    retrieved = retrieve_validated(Provider(b"pdf"), source(b"pdf"))
+    result = parse_retrieved_external(retrieved, (Parser(),))
+    assert len(result) == 1
+    assert result[0].source_sha256 == retrieved.sha256
+    assert result[0].document.source_sha256 == retrieved.sha256
+
+
+def test_independent_external_parser_fails_closed_on_duplicate_identity():
+    retrieved = retrieve_validated(Provider(b"pdf"), source(b"pdf"))
+    with pytest.raises(ValueError, match="Duplicate"):
+        parse_retrieved_external(retrieved, (Parser(), Parser()))
+
+
+def test_independent_external_parser_rejects_wrong_source_hash():
+    class BadParser(Parser):
+        def parse(self, content, *, source_name, source_sha256):
+            return CanonicalDocument("external-test", source_name, "0" * 64, 1, [], {self.name: self.version})
+
+    retrieved = retrieve_validated(Provider(b"pdf"), source(b"pdf"))
+    with pytest.raises(ValueError, match="another source"):
+        parse_retrieved_external(retrieved, (BadParser(),))
