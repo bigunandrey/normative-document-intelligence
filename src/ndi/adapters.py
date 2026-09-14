@@ -41,6 +41,15 @@ def _bbox(value: Any) -> BoundingBox | None:
     return None
 
 
+def _provenance(item: Mapping[str, Any]) -> list[Mapping[str, Any]]:
+    value = item.get("prov", item.get("provenance"))
+    if isinstance(value, Mapping):
+        return [value]
+    if isinstance(value, (list, tuple)):
+        return [entry for entry in value if isinstance(entry, Mapping)]
+    return []
+
+
 def _page(item: Mapping[str, Any]) -> int | None:
     for key in ("page", "page_no", "page_number", "pageNo", "page_num", "page_index"):
         if key in item:
@@ -49,16 +58,27 @@ def _page(item: Mapping[str, Any]) -> int | None:
                 return value + 1 if key == "page_index" and value >= 0 else value
             except (TypeError, ValueError):
                 return None
-    prov = item.get("prov", item.get("provenance"))
-    if isinstance(prov, list) and prov and isinstance(prov[0], Mapping):
-        return _page(prov[0])
-    if isinstance(prov, Mapping):
-        return _page(prov)
+    for provenance in _provenance(item):
+        page = _page(provenance)
+        if page is not None:
+            return page
     return None
 
 
 def _anchor(item: Mapping[str, Any]) -> SourceAnchor:
-    return SourceAnchor(page=_page(item), bbox=_bbox(item), char_start=item.get("char_start"), char_end=item.get("char_end"))
+    bbox = _bbox(item)
+    if bbox is None:
+        for provenance in _provenance(item):
+            bbox = _bbox(provenance)
+            if bbox is not None:
+                break
+    char_start = item.get("char_start")
+    char_end = item.get("char_end")
+    if char_start is None or char_end is None:
+        for provenance in _provenance(item):
+            char_start = provenance.get("char_start", char_start)
+            char_end = provenance.get("char_end", char_end)
+    return SourceAnchor(page=_page(item), bbox=bbox, char_start=char_start, char_end=char_end)
 
 
 def _node_type(value: Any) -> NodeType:
