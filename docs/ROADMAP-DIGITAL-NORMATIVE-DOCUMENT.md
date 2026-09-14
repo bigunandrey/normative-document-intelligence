@@ -92,23 +92,21 @@ Implemented baseline:
 - regression coverage for nested tables/lists, parent references, provenance aliases, geometry and parser attributes;
 - deterministic source-bound observation manifests and SHA-256 addressing;
 - deterministic `ingest_parser_outputs()` orchestration from complete parser-output sets;
-- CI regression coverage for complete parser coverage, source binding, determinism and fail-closed behavior.
+- adapter-output contract validation for source binding, parser provenance, ordering, anchors, spans, confidence and parent references;
+- CI regression coverage for complete parser coverage, source binding, determinism, fail-closed behavior and adapter contract violations.
 
-**Milestone recorded:** the deterministic multi-parser observation-ingestion path is implemented and its latest pre-hardening CI run `34880173299` (#99) was **SUCCESS**, including `pytest -q`.
+**Milestone recorded:** deterministic multi-parser observation ingestion and adapter-contract hardening are implemented and covered by green GitHub Actions runs. The latest verified pre-external-comparison baseline is run `34881838208` (#113), **SUCCESS**, with `pytest -q` SUCCESS.
 
-**Structural adapter audit now underway:**
-1. verify every adapter against the complete canonical `NodeType` contract;
-2. verify reading-order preservation and deterministic ordering;
-3. verify geometry and character spans without fabrication;
-4. verify nested table/list parent links and page propagation;
-5. verify parser/version/confidence/provenance preservation;
-6. add structural regression tests for the configured parser set.
+**Remaining Phase 2 work:**
+1. complete structural recognition for all configured parser outputs;
+2. execute the registered DBN fixture through the real multi-parser path;
+3. add/verify structural regression coverage for the full DBN fixture.
 
 **Important limitation:** fresh execution of the 105-page DBN fixture is not yet claimed. The full 22.4 MB fixture is available in Dropbox, but the current Dropbox retrieval path cannot fetch the complete binary; historical parser benchmark data therefore remains historical evidence only.
 
 Exit criterion: the registered DBN fixture can produce parser observations from the configured parser set through one reproducible API/CLI path, with provenance-complete observations and structural regression coverage.
 
-### Phase 3 — External Source Discovery & Cross-Check Engine
+### Phase 3 — External Source Discovery & Cross-Check Engine — **IN PROGRESS 🔄**
 
 Implement a provider-neutral engine with separate stages:
 
@@ -124,18 +122,22 @@ Document identity
   → discrepancy evidence
 ```
 
-Core contracts:
-- `ExternalSourceProvider`;
-- `SourceCandidate`;
-- `ValidatedSource`;
-- `ExternalDocument`;
-- `ExternalObservationSet`;
-- `CrossCheckResult`;
-- `DiscrepancyEvidence`.
+Implemented:
+- `ExternalSourceProvider` provider contract;
+- `SourceCandidate` / `ValidatedSource` source-validation contracts;
+- `ExternalDocument` and `ExternalObservationSet` evidence contracts;
+- `CrossCheckResult` and typed `DiscrepancyEvidence`;
+- fail-closed authoritative same-revision discovery;
+- deterministic comparison of supplied canonical observations against validated external canonical observations;
+- conversion of comparison differences into provenance-bound discrepancy evidence;
+- detection of missing observations, text differences, structural differences and anchor differences;
+- rejection of external comparison against a non-same-revision source.
 
-External discovery is a shared evidence capability for Phases 1–6, not merely a final Gate F operation.
+**Milestone recorded:** external-source discovery/validation and the first executable cross-document comparison layer are implemented and covered by regression tests.
 
-Exit criterion: given a document identity, the engine can return validated source candidates and explicit reasons when no authoritative match is available.
+**Next Phase 3 work:** implement provider retrieval/integrity verification and independent external parsing so the comparison layer can operate on retrieved authoritative documents rather than only pre-built canonical documents.
+
+Exit criterion: given a document identity, the engine can return validated source candidates and explicit reasons when no authoritative match is available, then retrieve a validated source and produce independently parsed comparison evidence.
 
 ### Phase 4 — Integrated reconciliation
 
