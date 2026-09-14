@@ -164,17 +164,15 @@ def gate_c_structural_acceptance(
     document: CanonicalDocument,
     reconciliation: ReconciliationReport,
     integrated_reconciliation: IntegratedReconciliationReport | ResolvedReconciliation | None = None,
+    graphical_verification: GateResult | None = None,
 ) -> GateResult:
-    """Close structural acceptance only when integrated reconciliation is resolved."""
+    """Close structural acceptance only when reconciliation and supplied graphical evidence are resolved."""
     audit = audit_document(document)
     blocking = [d for d in reconciliation.decisions if d.status != "AGREED"]
     resolved = False
     if integrated_reconciliation is not None:
         resolved = integrated_reconciliation.accepted
     checks = {
-        # Optional recognition evidence (bbox, character spans, confidence) may
-        # be absent without blocking acceptance; structural/provenance errors
-        # still produce Quality.FAIL and therefore block Gate C.
         "recognition_quality_pass": audit.passed,
         "reconciliation_clean": not blocking or resolved,
         "source_hash_valid": len(document.source_sha256) == 64,
@@ -186,6 +184,11 @@ def gate_c_structural_acceptance(
         checks["integrated_reconciliation_resolved"] = resolved
         if not resolved:
             issues.append("Integrated reconciliation has unresolved parser or external evidence blockers.")
+    if graphical_verification is not None:
+        graphical_ok = graphical_verification.status == GateStatus.PASS
+        checks["graphical_verification_pass"] = graphical_ok
+        if not graphical_ok:
+            issues.append("Graphical verification evidence is incomplete or not PASS.")
     return GateResult("C", GateStatus.PASS if all(checks.values()) else GateStatus.FAIL, checks, issues, ["structural-acceptance.json"])
 
 
