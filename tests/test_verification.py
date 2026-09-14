@@ -34,7 +34,7 @@ def test_gate_b_and_c_pass_for_agreement():
 
 def test_unmatched_parser_nodes_block_gate_b():
     left = from_records([{"type": "paragraph", "text": "same", "page": 1}], source_name="x.pdf", source_sha256=SHA, page_count=1, parser="p1", version="1")
-    right = from_records([{"type": "paragraph", "text": "different", "page": 1}], source_name="x.pdf", source_sha256=SHA, page_count=1, parser="p2", version="1")
+    right = from_records([{"type": "paragraph", "text": "different", "page": 2}], source_name="x.pdf", source_sha256=SHA, page_count=2, parser="p2", version="1")
     merged = merge_parser_documents([left, right])
     result, _ = gate_b_reconciliation(merged)
     assert result.status == "FAIL"
