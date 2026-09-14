@@ -1,12 +1,18 @@
-from ndi.canonical import CanonicalDocument, CanonicalNode, NodeType, ParserObservation, SourceAnchor
+from ndi.canonical import CanonicalDocument, CanonicalNode, NodeType, ParserObservation, SourceAnchor, BoundingBox
 from ndi.validator import Quality, audit_document
 
 
 SHA = "a" * 64
 
 
-def node(node_id, order=0, parent_id=None, page=1, observation=True):
+def node(node_id, order=0, parent_id=None, page=1, observation=True, complete_anchor=True):
     observations = []
+    anchor = SourceAnchor(
+        page=page,
+        bbox=BoundingBox(0, 0, 100, 20) if complete_anchor else None,
+        char_start=0 if complete_anchor else None,
+        char_end=4 if complete_anchor else None,
+    )
     if observation:
         observations.append(
             ParserObservation(
@@ -15,7 +21,7 @@ def node(node_id, order=0, parent_id=None, page=1, observation=True):
                 observation_id=f"obs-{node_id}",
                 node_type=NodeType.PARAGRAPH,
                 text="text",
-                anchor=SourceAnchor(page=page),
+                anchor=anchor,
                 confidence=0.99,
             )
         )
@@ -25,7 +31,7 @@ def node(node_id, order=0, parent_id=None, page=1, observation=True):
         text="text",
         parent_id=parent_id,
         order=order,
-        anchor=SourceAnchor(page=page),
+        anchor=anchor,
         observations=observations,
     )
 
@@ -42,9 +48,10 @@ def test_valid_document_passes():
 
 
 def test_missing_optional_evidence_is_warning():
-    n = node("n1")
-    n.anchor = SourceAnchor(page=1)
-    n.observations[0] = ParserObservation("test", "1.0", "obs-n1", NodeType.PARAGRAPH, "text", SourceAnchor(page=1), None)
+    n = node("n1", complete_anchor=False)
+    n.observations[0] = ParserObservation(
+        "test", "1.0", "obs-n1", NodeType.PARAGRAPH, "text", n.anchor, None
+    )
     audit = audit_document(document(n))
     assert audit.quality == Quality.PASS_WITH_WARNINGS
     assert any(i.code == "MISSING_CHAR_SPAN" for i in audit.warnings)
