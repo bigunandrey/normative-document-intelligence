@@ -69,114 +69,58 @@ Completed and GitHub-verified. The regression fixes restored a green `main` base
 
 Completed for the implemented contract scope. Identity, revision compatibility, source SHA-256 validation and source-candidate evidence are implemented and tested.
 
-CI evidence:
-- GitHub Actions run `34875875689` — **SUCCESS**;
-- `pytest -q` — **SUCCESS**.
-
-Integration work remains deferred to the ingestion/external-source phases.
-
 ### Phase 2 — Complete parser-observation layer — **IN PROGRESS 🔄**
 
-**Goal:** convert every supported parser result into the same evidence model without treating parser output as truth.
+Implemented baseline includes the canonical parser-neutral model, adapters for MarkItDown/pypdf/Docling/OpenDataLoader, deterministic registered ingestion, provenance/geometry/span handling, structural aliases, observation manifests, adapter contract validation and regression coverage.
 
-Implemented baseline:
-- canonical parser-neutral observation model;
-- adapters for MarkItDown, pypdf, Docling and OpenDataLoader;
-- stable `ParserAdapter` contract and deterministic registered parser set;
-- `adapt_registered()` / `adapt_all()` fail-closed execution;
-- adapter capability validation;
-- page-aware pypdf extraction;
-- provenance, geometry and character-span handling;
-- structural aliases for tables/rows/cells, formulas, headers/footers, notes/footnotes and figures;
-- local structural parent references separated from global input parent references;
-- regression coverage for nested tables/lists, parent references, provenance aliases, geometry and parser attributes;
-- deterministic source-bound observation manifests and SHA-256 addressing;
-- deterministic `ingest_parser_outputs()` orchestration from complete parser-output sets;
-- adapter-output contract validation for source binding, parser provenance, ordering, anchors, spans, confidence and parent references;
-- CI regression coverage for complete parser coverage, source binding, determinism, fail-closed behavior and adapter contract violations.
-
-**Milestone recorded:** deterministic multi-parser observation ingestion and adapter-contract hardening are implemented and covered by green GitHub Actions runs. The latest verified pre-external-comparison baseline is run `34881838208` (#113), **SUCCESS**, with `pytest -q` SUCCESS.
-
-**Remaining Phase 2 work:**
-1. complete structural recognition for all configured parser outputs;
-2. execute the registered DBN fixture through the real multi-parser path;
-3. add/verify structural regression coverage for the full DBN fixture.
-
-**Important limitation:** fresh execution of the 105-page DBN fixture is not yet claimed. The full 22.4 MB fixture is available in Dropbox, but the current Dropbox retrieval path cannot fetch the complete binary; historical parser benchmark data therefore remains historical evidence only.
-
-Exit criterion: the registered DBN fixture can produce parser observations from the configured parser set through one reproducible API/CLI path, with provenance-complete observations and structural regression coverage.
+Remaining: complete structural recognition for all configured parser outputs; execute the registered DBN fixture through the real multi-parser path; complete full-DBN structural regression evidence. Fresh DBN execution is not claimed because the complete 22.4 MB fixture is not currently available to the CI execution environment.
 
 ### Phase 3 — External Source Discovery & Cross-Check Engine — **COMPLETE FOR CONTRACT SCOPE ✅**
 
-Implemented the provider-neutral discovery → validation → retrieval → independent parsing → aggregation → comparison → discrepancy-evidence chain, including fail-closed source integrity and parser disagreement handling. Real authoritative provider implementations and real DBN execution remain integration work.
+Implemented provider-neutral discovery → validation → retrieval → independent parsing → aggregation → comparison → discrepancy-evidence chain, including fail-closed source integrity and parser disagreement handling. Real authoritative provider implementations and real DBN execution remain integration work.
 
 ### Phase 4 — Integrated reconciliation — **COMPLETE FOR CONTRACT SCOPE ✅**
 
-Implemented:
-- integrated parser + external evidence view;
-- explicit blocking on parser conflicts, missing observations and external discrepancies;
-- immutable, provenance-linked `ResolutionDecision` records;
-- explicit actions: `ACCEPT_SUPPLIED`, `ACCEPT_EXTERNAL`, `MANUAL_RESOLUTION`, `REJECT`;
-- fail-closed requirement for complete one-to-one blocker disposition;
-- rejection remains blocking;
-- source-bound canonical documents are never mutated by resolution;
-- structural Gate C now consumes the resolved reconciliation outcome;
-- regression coverage for clean acceptance, unresolved blockers, explicit resolution, provenance preservation and Gate C enforcement.
-
-**Phase 4 status:** **COMPLETE for the implemented contract scope.** Resolution is evidence/disposition only; it does not silently rewrite normative content.
+Implemented integrated parser + external evidence, explicit blocking/resolution, immutable provenance-linked resolution decisions, fail-closed blocker disposition, source-bound canonical preservation and Gate C integration. Resolution never silently rewrites normative content.
 
 ### Phase 5 — Structural acceptance / DBN end-to-end gate — **IN PROGRESS ▶️**
 
-Target document: **DBN В.2.5-56:2014 зі Зміною №1 та №2**.
+Target: **DBN В.2.5-56:2014 зі Зміною №1 та №2**.
 
-Required chain:
-
-```text
-source identity
-→ registered multi-parser ingestion
-→ parser reconciliation
-→ authoritative-source cross-check
-→ integrated reconciliation
-→ explicit resolution where required
-→ Gate C structural acceptance
-→ regression evidence
-```
-
-Fresh execution must be separately recorded from historical benchmark evidence. The full 105-page / ~22.4 MB DBN fixture is known to exist in Dropbox, but the current retrieval interface cannot provide the complete binary to this execution environment. Therefore no fresh end-to-end DBN result is claimed until the complete source bytes are available.
-
-**Current implementation status:**
-- DBN evidence manifest and explicit `FRESH_EXECUTION` / `HISTORICAL_BASELINE` distinction implemented;
-- DBN structural gate implemented fail-closed;
-- regression coverage added for evidence identity, historical-baseline rejection, missing regression evidence and source-hash mismatch;
-- Gate C integrated-reconciliation regression fixed and GitHub-verified;
-- latest verified CI run: `34885620846` (#157) — **SUCCESS**.
-
-**Remaining Phase 5 work:**
-1. make the complete DBN fixture available to the CI execution environment;
-2. execute the real registered multi-parser path against the 105-page source;
-3. produce fresh parser/reconciliation/external-cross-check evidence;
-4. complete full-DBN structural regression evidence;
-5. close Phase 5 only after the complete chain is freshly verified.
+Implemented DBN evidence manifest, explicit fresh-vs-historical distinction, fail-closed DBN structural gate and regression coverage. Fresh 105-page execution, authoritative cross-check evidence and full-DBN regression remain blocked until the complete source bytes are CI-accessible.
 
 ### Phase 6 — Graphical verification — **IN PROGRESS 🔄**
 
-Implemented:
-- fail-closed graphical-verification evidence contract;
-- validation of source hash, checked pages, verifier, timestamp and critical graphical categories;
-- regression coverage for missing critical categories, unresolved discrepancies and invalid source hash;
-- connection of graphical verification results to Gate C: when graphical evidence is supplied, Gate C now requires a `PASS` graphical gate and fails closed otherwise.
+Implemented fail-closed graphical evidence contract, source/page/verifier/timestamp validation, critical-category coverage and Gate C integration. Remaining: deterministic page/region evidence references and DBN-specific graphical fixtures once the complete PDF is CI-accessible.
 
-**Phase 6 remaining:**
-1. define deterministic page/region evidence references and verification results;
-2. add DBN-specific graphical regression fixtures/evidence once the complete PDF is CI-accessible.
+### Phase 7 — Digital representation persistence and revision lock — **COMPLETE FOR CONTRACT SCOPE ✅**
 
-### Phase 7 — Digital representation persistence and revision lock — **NEXT ▶️**
+Implemented and GitHub-verified:
+- immutable deterministic revision IDs;
+- source SHA-256 binding;
+- canonical digital-revision hash;
+- immutable revision-directory persistence;
+- reproducibility manifest with protocol/parser/evidence hashes;
+- fail-closed duplicate revision protection;
+- verification of stored representation against source-bound document and revision hash;
+- tamper detection for canonical representation and manifest source binding;
+- deterministic evidence-hash ordering.
 
-Implement immutable revision IDs, source-hash lock, digital-revision hash, verification archive, reproducibility manifest and explicit handoff artifact.
+Latest verified CI run: `34886488863` (#168) — **SUCCESS**, `pytest -q` — **SUCCESS**.
 
-### Phase 8 — Independent AI verification and final acceptance
+### Phase 8 — Independent AI verification and final acceptance — **IN PROGRESS ▶️**
 
-Implement the requirement for at least two independent AI verification records and make independence explicit in the evidence model. Only the complete evidence chain can produce `DIGITAL_ACCEPTED`.
+Goal: implement at least two genuinely independent AI verification records, make independence explicit and machine-checkable, bind each verification to the exact source/revision/evidence chain, and allow `DIGITAL_ACCEPTED` only when all mandatory evidence is present and independently verified.
+
+Required implementation:
+- independent verifier identity and verification scope;
+- source hash and digital-revision binding;
+- immutable verification records;
+- explicit independence criteria and duplicate-verifier rejection;
+- verification-result aggregation;
+- fail-closed requirement for ≥2 independent successful AI verifications;
+- final acceptance evidence binding to the locked revision;
+- regression tests for missing, duplicate, mismatched and conflicting AI verification records.
 
 ### Phase 9 — Downstream normative semantics
 
