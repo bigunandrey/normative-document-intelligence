@@ -1,11 +1,6 @@
 from __future__ import annotations
 
-"""Protocol-driven verification gates A-F.
-
-The module is evidence-first and fail-closed. It does not assign normative
-meaning to extracted content. Gates record what was checked and refuse final
-acceptance when mandatory evidence is absent.
-"""
+"""Protocol-driven verification gates A-F."""
 
 from dataclasses import asdict, dataclass, field
 from enum import StrEnum
@@ -197,7 +192,7 @@ def write_revision_record(record: RevisionRecord, root: Path) -> Path:
 
 
 def gate_e_revision_infrastructure(record: RevisionRecord, root: Path) -> GateResult:
-    checks = {"revision_id_unique": not (root / record.revision_id).exists(), "source_hash_recorded": len(record.source_hash) == 64, "digital_revision_recorded": bool(record.digital_revision), "reviewer_recorded": bool(record.reviewer_ai), "result_recorded": record.result != "NOT_RECORDED"}
+    checks = {"revision_id_unique": not (root / record.revision_id).exists(), "source_hash_recorded": len(record.source_hash) == 64, "digital_revision_recorded": bool(record.digital_revision), "source_checked": record.source_checked, "reviewer_recorded": bool(record.reviewer_ai), "result_recorded": record.result != "NOT_RECORDED"}
     if not all(checks.values()):
         return GateResult("E", GateStatus.FAIL, checks, ["Revision evidence is incomplete or revision ID already exists."])
     path = write_revision_record(record, root)
