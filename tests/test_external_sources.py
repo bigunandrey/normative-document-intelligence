@@ -86,13 +86,11 @@ def test_discovery_is_fail_closed_when_no_authoritative_match_exists():
 
 
 def test_different_revision_is_not_a_validated_match():
-    with pytest.raises(ValueError, match="compatibility"):
-        validate_candidate(
-            IDENTITY,
-            candidate(
-                identity=DocumentIdentity(designation="OTHER", title="Other"),
-            ),
-        )
+    result = discover_validated(IDENTITY, [Provider([
+        candidate(identity=DocumentIdentity(designation="OTHER", title="Other")),
+    ])])
+    assert result.status == DiscoveryStatus.NO_MATCH
+    assert any("different_revision" in reason for reason in result.reasons)
 
 
 def test_discrepancy_evidence_requires_source_provenance_and_evidence():
