@@ -37,6 +37,8 @@ Canonical digital representation
   ↓
 Revision + verification lock
   ↓
+Independent AI verification
+  ↓
 Regression
   ↓
 DIGITAL_ACCEPTED
@@ -108,23 +110,38 @@ Implemented and GitHub-verified:
 
 Latest verified CI run: `34886488863` (#168) — **SUCCESS**, `pytest -q` — **SUCCESS**.
 
-### Phase 8 — Independent AI verification and final acceptance — **IN PROGRESS ▶️**
+### Phase 8 — Independent AI verification and final acceptance — **COMPLETE FOR CONTRACT SCOPE ✅**
 
-Goal: implement at least two genuinely independent AI verification records, make independence explicit and machine-checkable, bind each verification to the exact source/revision/evidence chain, and allow `DIGITAL_ACCEPTED` only when all mandatory evidence is present and independently verified.
+Implemented and GitHub-verified:
+- source/document/revision-bound `AIVerificationRecord`;
+- explicit verifier and model identity;
+- explicit verification scope and checks;
+- cryptographic evidence hash for each verification record;
+- explicit independence basis;
+- duplicate-verifier rejection;
+- fail-closed requirement for at least two independent successful AI verifications;
+- final acceptance gate bound to the locked revision;
+- regression coverage for missing, duplicate, mismatched and non-PASS verification evidence.
+
+Latest verified CI run: `34886851497` (#174) — **SUCCESS**, `pytest -q` — **SUCCESS**.
+
+**Phase 8 limitation:** this closes the generic contract only. It does not constitute two real-world independent AI reviews of the DBN fixture; those remain evidence-generation work when the complete DBN source and verification workflow are available.
+
+### Phase 9 — Downstream normative semantics — **IN PROGRESS ▶️**
+
+Goal: transform the accepted canonical document into deterministic, source-bound normative semantics without altering the locked digital representation.
 
 Required implementation:
-- independent verifier identity and verification scope;
-- source hash and digital-revision binding;
-- immutable verification records;
-- explicit independence criteria and duplicate-verifier rejection;
-- verification-result aggregation;
-- fail-closed requirement for ≥2 independent successful AI verifications;
-- final acceptance evidence binding to the locked revision;
-- regression tests for missing, duplicate, mismatched and conflicting AI verification records.
-
-### Phase 9 — Downstream normative semantics
-
-Only after the document-intelligence chain is closed: atomic normative-unit decomposition, exact normative operators, table/formula rule registries, applicability/type links, dependency graphs and deterministic normative execution.
+- atomic normative-unit decomposition;
+- exact normative operators (`shall`, `should`, `may`, prohibitions, conditions and exceptions);
+- applicability/type links;
+- table/formula rule registries;
+- amendment/deletion semantics;
+- dependency and cross-reference graph;
+- deterministic semantic execution/evaluation model;
+- provenance for every semantic unit back to canonical nodes and source anchors;
+- fail-closed handling of ambiguous or unresolved semantic interpretation;
+- regression fixtures for semantic units, operators, tables, formulas, conditions and dependencies.
 
 ## 4. Priority order
 
