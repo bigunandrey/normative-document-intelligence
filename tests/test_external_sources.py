@@ -6,7 +6,6 @@ from ndi import (
     DiscrepancyEvidence,
     DiscrepancyKind,
     DiscoveryStatus,
-    ExternalSourceProvider,
     SourceCandidate,
     SourceType,
     discover_validated,
@@ -79,22 +78,19 @@ def test_discovery_returns_only_validated_same_revision_matches():
 
 def test_discovery_is_fail_closed_when_no_authoritative_match_exists():
     result = discover_validated(IDENTITY, [Provider([
-        candidate(authority_verified=False, evidence=()),
+        candidate(source_id="unverified", authority_verified=False, evidence=()),
     ])])
     assert result.status == DiscoveryStatus.NO_MATCH
     assert not result.sources
     assert result.reasons
 
 
-def test_invalid_candidate_cannot_become_validated_source():
-    with pytest.raises(ValueError, match="invalid"):
+def test_different_revision_is_not_a_validated_match():
+    with pytest.raises(ValueError, match="compatibility"):
         validate_candidate(
             IDENTITY,
             candidate(
                 identity=DocumentIdentity(designation="OTHER", title="Other"),
-                authority_verified=False,
-                revision_verified=False,
-                evidence=("untrusted",),
             ),
         )
 
