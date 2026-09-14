@@ -8,6 +8,7 @@ from .adapters import from_docling_records, from_markitdown, from_opendataloader
 from .adapter_contract import AdapterCapabilities, ParserAdapter, validate_adapter_capabilities, validate_adapter_output
 from .adapter_registry import RegisteredAdapter, adapt_all, adapt_registered, default_adapters, validate_default_adapters
 from .ingestion import ObservationArtifact, ObservationPackage, ingest_parser_outputs
+from .external_sources import CrossCheckResult, DiscrepancyEvidence, DiscrepancyKind, DiscoveryStatus, ExternalDocument, ExternalObservationSet, ExternalSourceProvider, ValidatedSource, discover_validated, validate_candidate
 from .extractor import ExtractionError, extract_pdf, extract_pdf_evidence, markitdown_version, pdf_page_text, pypdf_version
 from .validator import Quality, RecognitionAudit, RecognitionIssue, audit_document
 from .reconciliation import ReconciliationDecision, ReconciliationReport, reconcile_document
@@ -21,6 +22,7 @@ __all__ = [
     "from_docling_records", "from_markitdown", "from_opendataloader_records", "from_pypdf_pages", "from_records", "new_document",
     "AdapterCapabilities", "ParserAdapter", "validate_adapter_capabilities", "validate_adapter_output", "RegisteredAdapter", "adapt_all", "adapt_registered", "default_adapters", "validate_default_adapters",
     "ObservationArtifact", "ObservationPackage", "ingest_parser_outputs",
+    "CrossCheckResult", "DiscrepancyEvidence", "DiscrepancyKind", "DiscoveryStatus", "ExternalDocument", "ExternalObservationSet", "ExternalSourceProvider", "ValidatedSource", "discover_validated", "validate_candidate",
     "ExtractionError", "extract_pdf", "extract_pdf_evidence", "markitdown_version", "pdf_page_text", "pypdf_version",
     "Quality", "RecognitionAudit", "RecognitionIssue", "audit_document", "ReconciliationDecision", "ReconciliationReport", "reconcile_document",
     "AcceptanceEvidence", "ExternalCrossCheckRecord", "GateResult", "GateStatus", "GraphicalVerificationRecord", "RevisionRecord",
