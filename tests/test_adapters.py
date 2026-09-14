@@ -118,3 +118,18 @@ def test_confidence_and_raw_parser_attributes_are_preserved():
     node = doc.nodes[0]
     assert node.observations[0].confidence == 0.93
     assert node.observations[0].attributes["custom"] == "kept"
+
+
+def test_recursive_list_expansion_preserves_depth_first_reading_order():
+    doc = from_records(
+        [{"type": "list", "page": 1, "items": [
+            {"text": "one", "items": [{"text": "one.a"}, {"text": "one.b"}]},
+            {"text": "two"},
+        ]}],
+        source_name="test.pdf", source_sha256=SHA, page_count=1, parser="test", version="1.0",
+    )
+    assert [n.text for n in doc.nodes] == ["", "one", "one.a", "one.b", "two"]
+    assert doc.nodes[2].parent_id == doc.nodes[1].node_id
+    assert doc.nodes[3].parent_id == doc.nodes[1].node_id
+    assert doc.nodes[4].parent_id == doc.nodes[0].node_id
+    assert [n.order for n in doc.nodes] == list(range(5))
