@@ -63,119 +63,52 @@ Therefore external-source discovery and validation must be implemented **before 
 
 ### Phase 0 — CI and baseline recovery — **COMPLETE ✅**
 
-**Goal:** never advance the architecture on a red repository.
-
-Completed:
-1. Diagnosed the failing GitHub Actions regression on `main`.
-2. Restored the repository to a green baseline.
-3. Corrected repository-local `tools` importability and pytest path configuration.
-4. Corrected the unmatched-parser regression fixture so it tests a genuinely unmatched node rather than an anchor-matched text conflict.
-5. Confirmed GitHub Actions run `34875625916` for commit `755833052ff21d15018562800b6e6a39e36f0744` completed successfully, including `pytest -q`.
-
-Exit criterion: **satisfied** — `main` has a confirmed successful GitHub Actions test run after the regression fixes.
-
----
+Completed and GitHub-verified. The regression fixes restored a green `main` baseline.
 
 ### Phase 1 — Document identity and source registry — **COMPLETE ✅**
 
-**Goal:** establish exactly what document the user supplied before interpreting its contents.
-
-Completed:
-- immutable `DocumentIdentity` contract;
-- designation/title;
-- edition/year;
-- amendments and revisions;
-- publication/status metadata;
-- issuing/authoritative organization;
-- source URL/type;
-- source SHA-256 validation;
-- source acquisition timestamp;
-- `SourceRecord` and `SourceRegistry`;
-- `SourceCandidate` authority/revision evidence fields;
-- explicit compatibility states: `SAME_REVISION`, `DIFFERENT_REVISION`, `UNVERIFIED`;
-- fail-closed rejection of an unverified source candidate;
-- unit-test coverage for identity, SHA-256 validation, duplicate source IDs and revision compatibility;
-- production-facing exports from `ndi`.
+Completed for the implemented contract scope. Identity, revision compatibility, source SHA-256 validation and source-candidate evidence are implemented and tested.
 
 CI evidence:
 - GitHub Actions run `34875875689` — **SUCCESS**;
-- `pytest -q` step — **SUCCESS**.
+- `pytest -q` — **SUCCESS**.
 
-Exit criterion: **satisfied for the implemented Phase 1 scope** — the engine can distinguish same-document/same-revision, different-revision and unverified candidates at the source-registry contract level, with the decision preserved as evidence.
-
-Remaining integration work is explicitly deferred to the ingestion/external-source phases rather than silently treated as complete:
-- deterministic extraction of identity metadata from supplied-document observations;
-- persistent source-registry artifact;
-- authoritative-source registry configuration;
-- ingestion-pipeline integration;
-- DBN end-to-end identity execution.
-
----
+Integration work remains deferred to the ingestion/external-source phases.
 
 ### Phase 2 — Complete parser-observation layer — **IN PROGRESS 🔄**
 
 **Goal:** convert every supported parser result into the same evidence model without treating parser output as truth.
 
-Implement and test adapters for:
-- MarkItDown;
-- pypdf;
-- Docling;
-- OpenDataLoader;
-- future parsers through a stable adapter contract.
+Implemented baseline:
+- canonical parser-neutral observation model;
+- adapters for MarkItDown, pypdf, Docling and OpenDataLoader;
+- stable `ParserAdapter` contract and deterministic registered parser set;
+- `adapt_registered()` / `adapt_all()` fail-closed execution;
+- adapter capability validation;
+- page-aware pypdf extraction;
+- provenance, geometry and character-span handling;
+- structural aliases for tables/rows/cells, formulas, headers/footers, notes/footnotes and figures;
+- local structural parent references separated from global input parent references;
+- regression coverage for nested tables/lists, parent references, provenance aliases, geometry and parser attributes;
+- deterministic source-bound observation manifests and SHA-256 addressing;
+- deterministic `ingest_parser_outputs()` orchestration from complete parser-output sets;
+- CI regression coverage for complete parser coverage, source binding, determinism and fail-closed behavior.
 
-Observation coverage:
-- pages;
-- reading order;
-- headings/sections;
-- paragraphs and numbered items;
-- lists;
-- tables/rows/cells;
-- formulas;
-- headers/footers;
-- footnotes/notes;
-- figures/graphics;
-- bounding boxes and character spans;
-- parser/version/confidence/provenance.
+**Milestone recorded:** the deterministic multi-parser observation-ingestion path is implemented and its latest pre-hardening CI run `34880173299` (#99) was **SUCCESS**, including `pytest -q`.
 
-Current baseline:
-- parser-neutral canonical model exists;
-- adapters exist for MarkItDown, pypdf, Docling and OpenDataLoader;
-- page-aware pypdf extraction exists;
-- parser observations and provenance structures exist;
-- cross-parser matching/reconciliation exists;
-- structural quality validation and verification gates exist;
-- stable `ParserAdapter` contract exists;
-- deterministic registered parser set exists for MarkItDown, pypdf, Docling and OpenDataLoader;
-- `adapt_registered()` provides a common execution contract;
-- `adapt_all()` provides a single deterministic multi-parser execution path and fails closed when a configured parser output is missing or unknown;
-- adapter capability manifest is validated before execution;
-- regression tests cover parser registration, identity, provenance and page-boundary preservation;
-- parent references are now explicitly separated into local structural references and global input references, preventing ordinal-offset corruption across multiple top-level records;
-- regression coverage includes multiple structural records plus explicit global parent references;
-- deterministic source-bound observation manifests are JSON-safe, canonicalized and SHA-256 addressable;
-- `ingest_parser_outputs()` now provides one deterministic API path from a complete configured parser-output set to source-bound observation artifacts;
-- ingestion regression coverage verifies complete parser coverage, source binding, determinism and fail-closed behavior.
+**Structural adapter audit now underway:**
+1. verify every adapter against the complete canonical `NodeType` contract;
+2. verify reading-order preservation and deterministic ordering;
+3. verify geometry and character spans without fabrication;
+4. verify nested table/list parent links and page propagation;
+5. verify parser/version/confidence/provenance preservation;
+6. add structural regression tests for the configured parser set.
 
-Remaining Phase 2 work:
-- audit and harden each adapter against the full canonical observation contract;
-- complete structural recognition for tables/rows/cells, formulas, headers/footers, footnotes and figures;
-- preserve reading order and geometry consistently across adapters;
-- execute the registered DBN fixture through the multi-parser path;
-- add structural regression tests for the configured parser set.
+**Important limitation:** fresh execution of the 105-page DBN fixture is not yet claimed. The full 22.4 MB fixture is available in Dropbox, but the current Dropbox retrieval path cannot fetch the complete binary; historical parser benchmark data therefore remains historical evidence only.
 
-CI evidence:
-- GitHub Actions run `34880086115` (#98) for commit `7b384719b46353e5501fa754fbd0e86921e03274` — **SUCCESS**;
-- `pytest -q` step — **SUCCESS**.
-
-The roadmap remains in Phase 2 until the DBN fixture can be executed through the complete registered parser path with provenance-complete observations.
-
-Exit criterion: the registered DBN fixture can produce parser observations from the configured parser set through one reproducible API/CLI path.
-
----
+Exit criterion: the registered DBN fixture can produce parser observations from the configured parser set through one reproducible API/CLI path, with provenance-complete observations and structural regression coverage.
 
 ### Phase 3 — External Source Discovery & Cross-Check Engine
-
-**This is the newly elevated priority.**
 
 Implement a provider-neutral engine with separate stages:
 
@@ -200,168 +133,43 @@ Core contracts:
 - `CrossCheckResult`;
 - `DiscrepancyEvidence`.
 
-The engine must support configured authoritative registries/web sources without coupling the NDI core to one website or search provider.
-
-Important distinction:
-- **discovery** finds candidates;
-- **validation** establishes authority and revision identity;
-- **retrieval** obtains the source;
-- **comparison** identifies differences;
-- **resolution** records what evidence resolved the discrepancy.
-
-No external source may be promoted to PASS merely because its title looks similar.
+External discovery is a shared evidence capability for Phases 1–6, not merely a final Gate F operation.
 
 Exit criterion: given a document identity, the engine can return validated source candidates and explicit reasons when no authoritative match is available.
 
----
-
 ### Phase 4 — Integrated reconciliation
 
-**Goal:** combine parser evidence and external-source evidence without silent correction.
-
-Implement:
-- multi-parser reconciliation;
-- external-source reconciliation;
-- unmatched-node detection;
-- missing-observation detection;
-- table/formula discrepancy comparison;
-- source-text discrepancy comparison;
-- amendment/deletion discrepancy comparison;
-- machine-readable discrepancy report;
-- evidence links from every discrepancy to source/parser/page/geometry.
-
-Resolution states must distinguish at least:
-- `AGREED`;
-- `CONFLICT`;
-- `MISSING_OBSERVATION`;
-- `EXTERNAL_SOURCE_UNAVAILABLE`;
-- `EXTERNAL_SOURCE_UNVERIFIED`;
-- `RESOLVED_BY_SOURCE`;
-- `RESOLVED_BY_GRAPHICAL_VERIFICATION`;
-- `UNRESOLVED`.
-
-Exit criterion: no discrepancy can disappear during reconciliation; every unresolved discrepancy blocks structural acceptance.
-
----
+Combine parser evidence and external-source evidence without silent correction. Every discrepancy must remain machine-readable and provenance-linked; unresolved discrepancies block structural acceptance.
 
 ### Phase 5 — Structural acceptance / DBN end-to-end gate
 
-Run the complete chain against **DBN В.2.5-56:2014 зі Зміною №1 та №2**.
-
-Required outputs:
-- canonical document;
-- parser observation package;
-- external-source evidence package;
-- reconciliation report;
-- structural acceptance report;
-- complete discrepancy inventory;
-- source/provenance manifest.
-
-The historical benchmark remains historical evidence only. Fresh NDI execution must be recorded separately.
-
-Exit criterion: fresh DBN execution is reproducible and its structural status is explicitly `PASS`, `PASS_WITH_WARNINGS`, or `FAIL` with machine-readable reasons.
-
----
+Run the complete chain against **DBN В.2.5-56:2014 зі Зміною №1 та №2**. Fresh execution must be separately recorded from historical benchmark evidence.
 
 ### Phase 6 — Graphical verification
 
-**Goal:** verify visual fidelity for information that text extraction cannot prove reliably.
-
-Priority checks:
-- tables and merged cells;
-- formulas and mathematical symbols;
-- decimal separators and operators;
-- critical numerical values;
-- footnotes/notes;
-- numbering;
-- headers/footers;
-- amendment/deletion marks;
-- page breaks and reading order;
-- diagrams/figures where structurally relevant.
-
-Graphical verification is evidence-producing, not a generic human approval checkbox.
-
-Exit criterion: every graphical check has page/region provenance, verifier identity, result and discrepancy linkage.
-
----
+Verify visually critical information: tables/merged cells, formulas, numerical values, symbols/operators, notes, numbering, headers/footers, amendments/deletions, page breaks/reading order and structurally relevant figures.
 
 ### Phase 7 — Digital representation persistence and revision lock
 
-Implement the first-class artifact chain:
-
-```text
-source hash
-+ canonical representation
-+ evidence manifest
-+ verification records
-+ discrepancy/resolution records
-+ digital revision hash
-+ previous revision
-```
-
-Implement:
-- immutable revision IDs;
-- source-hash lock;
-- digital-revision hash;
-- verification archive;
-- reproducibility manifest;
-- explicit handoff artifact.
-
-Exit criterion: changing the source or canonical representation necessarily produces a new revision and invalidates prior acceptance evidence.
-
----
+Implement immutable revision IDs, source-hash lock, digital-revision hash, verification archive, reproducibility manifest and explicit handoff artifact.
 
 ### Phase 8 — Independent AI verification and final acceptance
 
-Implement the protocol's requirement for at least two independent AI verification records.
-
-Independence must be explicit in the artifact model; two records generated by the same unchecked path must not automatically count as independent verification.
-
-Final acceptance requires all applicable evidence:
-- source verified;
-- structural recognition verified;
-- reconciliation verified;
-- digital representation persisted;
-- graphical verification completed or explicitly unavailable with protocol-compliant handling;
-- external cross-check completed or explicitly unavailable with protocol-compliant handling;
-- changes/deletions verified;
-- ≥2 independent AI verifications;
-- regression passed;
-- required downstream register synchronization completed;
-- revision locked.
-
-Exit criterion: only the complete evidence chain can produce `DIGITAL_ACCEPTED`.
-
----
+Implement the requirement for at least two independent AI verification records and make independence explicit in the evidence model. Only the complete evidence chain can produce `DIGITAL_ACCEPTED`.
 
 ### Phase 9 — Downstream normative semantics
 
-Only after the document-intelligence chain is closed:
-- atomic normative-unit semantic decomposition;
-- exact normative operators;
-- table/formula rule registries;
-- applicability/type links;
-- dependency graphs;
-- master normative registers;
-- deterministic normative execution.
-
-These remain downstream of generic NDI by design.
+Only after the document-intelligence chain is closed: atomic normative-unit decomposition, exact normative operators, table/formula rule registries, applicability/type links, dependency graphs and deterministic normative execution.
 
 ## 4. Priority order
 
-The new order is:
-
 **0. Green CI → 1. Source identity → 2. Parser observations → 3. External Source Engine → 4. Reconciliation → 5. DBN structural gate → 6. Graphical verification → 7. Persistence/revision lock → 8. Independent verification/final acceptance → 9. Downstream semantics.**
-
-This replaces the previous linear assumption that Gate F should be implemented only after A–E. External-source infrastructure is now a shared capability used by Phases 1–6 and represented in the final acceptance chain.
 
 ## 5. Definition of done
 
-The project is not considered complete merely because unit tests pass.
+The generic NDI layer is complete only when:
 
-The generic NDI layer is complete when:
-
-1. A supplied normative PDF has an immutable source identity.
+1. A supplied normative PDF has immutable source identity.
 2. Multiple independent extraction paths produce provenance-complete observations.
 3. External authoritative sources can be discovered, validated and retrieved through a provider-neutral interface.
 4. Parser and external-source discrepancies are retained and machine-readable.
