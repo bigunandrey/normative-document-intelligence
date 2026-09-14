@@ -44,18 +44,27 @@ def _unit_id(document_id: str, node_id: str, ordinal: int, text: str) -> str:
 
 
 def _operator(text: str) -> tuple[str, str]:
+    # Match compound operators first so e.g. "shall not" is never also
+    # classified as the simpler "shall" operator.
     matches = [
-        ("shall not", "PROHIBITION"), ("must not", "PROHIBITION"),
-        ("shall", "REQUIREMENT"), ("must", "REQUIREMENT"),
-        ("should", "RECOMMENDATION"), ("may", "PERMISSION"),
+        ("shall not", "PROHIBITION"),
+        ("must not", "PROHIBITION"),
         ("shall be", "REQUIREMENT"),
+        ("must be", "REQUIREMENT"),
+        ("shall", "REQUIREMENT"),
+        ("must", "REQUIREMENT"),
+        ("should", "RECOMMENDATION"),
+        ("may", "PERMISSION"),
     ]
     found = [(token, mode) for token, mode in matches if re.search(rf"\b{re.escape(token)}\b", text, re.IGNORECASE)]
     if not found:
         raise SemanticInterpretationError("No unambiguous normative operator found")
-    if len({mode for _, mode in found}) != 1:
+    modes = {mode for _, mode in found}
+    if len(modes) != 1:
         raise SemanticInterpretationError("Multiple conflicting normative operators found")
-    return found[0]
+    # Prefer the longest matching operator within the same modality.
+    token, mode = max(found, key=lambda item: len(item[0]))
+    return token, mode
 
 
 def decompose_normative_node(document: CanonicalDocument, node: CanonicalNode, *, digital_revision: str) -> tuple[NormativeUnit, ...]:
