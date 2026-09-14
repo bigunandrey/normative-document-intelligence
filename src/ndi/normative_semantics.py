@@ -33,6 +33,7 @@ class NormativeUnit:
     source_text: str = ""
     applicability: tuple[str, ...] = ()
     subject_type: str = ""
+    dependency_targets: tuple[str, ...] = ()
 
     def as_dict(self) -> dict[str, object]:
         return asdict(self)
@@ -96,32 +97,15 @@ def _unit_id(document_id: str, node_id: str, ordinal: int, text: str) -> str:
 
 
 def _operator(text: str) -> tuple[str, str]:
-    matches = [
-        ("shall not", "PROHIBITION"),
-        ("must not", "PROHIBITION"),
-        ("shall be", "REQUIREMENT"),
-        ("must be", "REQUIREMENT"),
-        ("shall", "REQUIREMENT"),
-        ("must", "REQUIREMENT"),
-        ("should", "RECOMMENDATION"),
-        ("may", "PERMISSION"),
-    ]
+    matches = [("shall not", "PROHIBITION"), ("must not", "PROHIBITION"), ("shall be", "REQUIREMENT"), ("must be", "REQUIREMENT"), ("shall", "REQUIREMENT"), ("must", "REQUIREMENT"), ("should", "RECOMMENDATION"), ("may", "PERMISSION")]
     found: list[tuple[str, str, int, int]] = []
     for token, mode in matches:
         for match in re.finditer(rf"\b{re.escape(token)}\b", text, re.IGNORECASE):
             found.append((token, mode, match.start(), match.end()))
     if not found:
         raise SemanticInterpretationError("No unambiguous normative operator found")
-    compound_ranges = [
-        (start, end)
-        for token, _mode, start, end in found
-        if token in {"shall not", "must not", "shall be", "must be"}
-    ]
-    effective = [
-        item for item in found
-        if not any(start <= item[2] and item[3] <= end and item[0] not in {"shall not", "must not", "shall be", "must be"}
-                   for start, end in compound_ranges)
-    ]
+    compound_ranges = [(start, end) for token, _mode, start, end in found if token in {"shall not", "must not", "shall be", "must be"}]
+    effective = [item for item in found if not any(start <= item[2] and item[3] <= end and item[0] not in {"shall not", "must not", "shall be", "must be"} for start, end in compound_ranges)]
     modes = {mode for _token, mode, _start, _end in effective}
     if len(modes) != 1:
         raise SemanticInterpretationError("Multiple conflicting normative operators found")
@@ -161,7 +145,8 @@ def decompose_normative_node(document: CanonicalDocument, node: CanonicalNode, *
     page = node.anchor.page if node.anchor else None
     applicability = _attribute_values(node, "applicability", "applies_to", "scope")
     subject_type = str(node.attributes.get("subject_type", node.attributes.get("type", ""))).strip()
-    return (NormativeUnit(_unit_id(document.document_id, node.node_id, 0, text), document.document_id, document.source_sha256, digital_revision, node.node_id, page, operator, modality, subject, predicate, condition, exception, text, applicability, subject_type),)
+    dependency_targets = _attribute_values(node, "references", "cross_references", "depends_on", "dependency", "related_to")
+    return (NormativeUnit(_unit_id(document.document_id, node.node_id, 0, text), document.document_id, document.source_sha256, digital_revision, node.node_id, page, operator, modality, subject, predicate, condition, exception, text, applicability, subject_type, dependency_targets),)
 
 
 def build_normative_units(document: CanonicalDocument, lock: RevisionLock) -> tuple[NormativeUnit, ...]:
@@ -205,23 +190,15 @@ def build_rule_registry(document: CanonicalDocument, lock: RevisionLock) -> tupl
 
 
 def build_dependency_graph(units: tuple[NormativeUnit, ...], lock: RevisionLock) -> SemanticDependencyGraph:
-    """Build a deterministic graph from explicit references/dependencies only.
-
-    References must be supplied by the canonical observation layer as node attributes;
-    the semantic layer never guesses a target from prose. This keeps unresolved references
-    fail-closed instead of inventing graph edges.
-    """
     dependencies: list[SemanticDependency] = []
-    allowed = {"references", "cross_references", "depends_on", "dependency", "related_to"}
     for unit in units:
         if unit.document_id != lock.document_id or unit.source_sha256 != lock.source_sha256 or unit.digital_revision != lock.digital_revision:
             raise ValueError("dependency graph unit is not bound to the locked revision")
-        # NormativeUnit deliberately carries no guessed target. Targets may be encoded in
-        # applicability for scope only; explicit dependency targets are added through a
-        # dedicated attribute on a serialized unit when this graph is built downstream.
-        for target in ():  # explicit placeholder: no inferred edges
+        for target in unit.dependency_targets:
             if not target:
                 raise SemanticInterpretationError("empty dependency target")
+            payload = f"{unit.unit_id}|{target}|depends_on"
+            dependencies.append(SemanticDependency("dep-" + hashlib.sha256(payload.encode("utf-8")).hexdigest()[:24], lock.document_id, lock.source_sha256, lock.digital_revision, unit.unit_id, target, "depends_on", unit.node_id, unit.anchor_page, unit.source_text))
     return SemanticDependencyGraph(lock.document_id, lock.source_sha256, lock.digital_revision, tuple(dependencies))
 
 
