@@ -7,12 +7,15 @@ from enum import StrEnum
 import hashlib
 import json
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, TYPE_CHECKING
 
 from .canonical import CanonicalDocument
 from .matching import compare_documents, match_nodes
 from .reconciliation import ReconciliationReport, reconcile_document
 from .validator import Quality, audit_document
+
+if TYPE_CHECKING:
+    from .integrated_reconciliation import IntegratedReconciliationReport
 
 
 class GateStatus(StrEnum):
@@ -157,13 +160,26 @@ def gate_b_reconciliation(document: CanonicalDocument) -> tuple[GateResult, Reco
     return GateResult("B", GateStatus.PASS if all(checks.values()) else GateStatus.FAIL, checks, issues, ["reconciliation-report.json"]), report
 
 
-def gate_c_structural_acceptance(document: CanonicalDocument, reconciliation: ReconciliationReport) -> GateResult:
+def gate_c_structural_acceptance(
+    document: CanonicalDocument,
+    reconciliation: ReconciliationReport,
+    integrated_reconciliation: IntegratedReconciliationReport | None = None,
+) -> GateResult:
+    """Close structural acceptance only when integrated reconciliation is resolved."""
     audit = audit_document(document)
     blocking = [d for d in reconciliation.decisions if d.status != "AGREED"]
-    checks = {"recognition_quality_pass": audit.quality == Quality.PASS, "reconciliation_clean": not blocking, "source_hash_valid": len(document.source_sha256) == 64}
+    checks = {
+        "recognition_quality_pass": audit.quality == Quality.PASS,
+        "reconciliation_clean": not blocking,
+        "source_hash_valid": len(document.source_sha256) == 64,
+    }
     issues = [f"Recognition quality: {audit.quality.value}"] if audit.quality != Quality.PASS else []
     if blocking:
         issues.append(f"{len(blocking)} reconciliation decisions are not AGREED.")
+    if integrated_reconciliation is not None:
+        checks["integrated_reconciliation_resolved"] = integrated_reconciliation.accepted
+        if not integrated_reconciliation.accepted:
+            issues.append("Integrated reconciliation has unresolved parser or external evidence blockers.")
     return GateResult("C", GateStatus.PASS if all(checks.values()) else GateStatus.FAIL, checks, issues, ["structural-acceptance.json"])
 
 
