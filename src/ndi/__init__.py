@@ -9,9 +9,9 @@ from .adapter_contract import AdapterCapabilities, ParserAdapter, validate_adapt
 from .adapter_registry import RegisteredAdapter, adapt_all, adapt_registered, default_adapters, validate_default_adapters
 from .ingestion import ObservationArtifact, ObservationPackage, ingest_parser_outputs
 from .external_sources import CrossCheckResult, DiscrepancyEvidence, DiscrepancyKind, DiscoveryStatus, ExternalDocument, ExternalObservationSet, ExternalSourceProvider, ValidatedSource, discover_validated, validate_candidate
-from .external_comparison import ExternalComparisonResult, compare_against_external, compare_discovered_sources
+from .external_comparison import ExternalComparisonResult, compare_against_external, compare_discovered_sources, compare_observation_set
 from .external_retrieval import RetrievedSource, retrieve_validated, verify_retrieved_bytes
-from .external_parsing import ExternalParser, ExternalParserObservation, parse_retrieved_external
+from .external_parsing import ExternalParser, ExternalParserObservation, aggregate_external_observations, parse_retrieved_external
 from .extractor import ExtractionError, extract_pdf, extract_pdf_evidence, markitdown_version, pdf_page_text, pypdf_version
 from .validator import Quality, RecognitionAudit, RecognitionIssue, audit_document
 from .reconciliation import ReconciliationDecision, ReconciliationReport, reconcile_document
@@ -26,8 +26,8 @@ __all__ = [
     "AdapterCapabilities", "ParserAdapter", "validate_adapter_capabilities", "validate_adapter_output", "RegisteredAdapter", "adapt_all", "adapt_registered", "default_adapters", "validate_default_adapters",
     "ObservationArtifact", "ObservationPackage", "ingest_parser_outputs",
     "CrossCheckResult", "DiscrepancyEvidence", "DiscrepancyKind", "DiscoveryStatus", "ExternalDocument", "ExternalObservationSet", "ExternalSourceProvider", "ValidatedSource", "discover_validated", "validate_candidate",
-    "ExternalComparisonResult", "compare_against_external", "compare_discovered_sources",
-    "RetrievedSource", "retrieve_validated", "verify_retrieved_bytes", "ExternalParser", "ExternalParserObservation", "parse_retrieved_external",
+    "ExternalComparisonResult", "compare_against_external", "compare_discovered_sources", "compare_observation_set",
+    "RetrievedSource", "retrieve_validated", "verify_retrieved_bytes", "ExternalParser", "ExternalParserObservation", "aggregate_external_observations", "parse_retrieved_external",
     "ExtractionError", "extract_pdf", "extract_pdf_evidence", "markitdown_version", "pdf_page_text", "pypdf_version",
     "Quality", "RecognitionAudit", "RecognitionIssue", "audit_document", "ReconciliationDecision", "ReconciliationReport", "reconcile_document",
     "AcceptanceEvidence", "ExternalCrossCheckRecord", "GateResult", "GateStatus", "GraphicalVerificationRecord", "RevisionRecord",
