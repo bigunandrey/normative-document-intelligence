@@ -104,30 +104,32 @@ class AcceptanceEvidence:
 
 
 def merge_parser_documents(documents: Iterable[CanonicalDocument]) -> CanonicalDocument:
-    """Merge parser documents while preserving unmatched-node discrepancies."""
+    """Merge parser documents and preserve every unmatched parser node as a discrepancy."""
     docs = list(documents)
     if not docs:
         raise ValueError("At least one parser document is required")
     merged = docs[0]
-    merge_discrepancies: list[dict[str, object]] = []
+    discrepancies: list[dict[str, object]] = []
     for other in docs[1:]:
+        left_before = list(merged.nodes)
         pairs = match_nodes(merged, other)
         matched_left = {left_id for left_id, _ in pairs}
         matched_right = {right_id for _, right_id in pairs}
+        other_parser = next(iter(other.parser_versions), "unknown")
         for left_id, right_id in pairs:
             target = merged.node(left_id)
             source = other.node(right_id)
             for observation in source.observations:
                 target.add_observation(observation)
+        for source in left_before:
+            if source.node_id not in matched_left:
+                discrepancies.append({"side": "left", "node_id": source.node_id, "parser": "merged"})
         for source in other.nodes:
             if source.node_id not in matched_right:
-                merge_discrepancies.append({"side": "right", "node_id": source.node_id, "parser": next(iter(other.parser_versions), "unknown")})
+                discrepancies.append({"side": "right", "node_id": source.node_id, "parser": other_parser})
                 merged.nodes.append(source)
-        for source in merged.nodes:
-            if source.node_id not in matched_left and source.observations and any(o.parser in other.parser_versions for o in source.observations):
-                continue
         merged.parser_versions.update(other.parser_versions)
-    merged.metadata["parser_merge_discrepancies"] = merge_discrepancies
+    merged.metadata["parser_merge_discrepancies"] = discrepancies
     return merged
 
 
@@ -150,13 +152,13 @@ def gate_b_reconciliation(document: CanonicalDocument) -> tuple[GateResult, Reco
     report = reconcile_document(document)
     conflicts = len(report.conflicts)
     missing = sum(d.status == "MISSING_OBSERVATION" for d in report.decisions)
-    merge_discrepancies = document.metadata.get("parser_merge_discrepancies", [])
-    checks = {"reconciliation_executed": True, "no_conflicts": conflicts == 0, "no_missing_observations": missing == 0, "no_unmatched_parser_nodes": not merge_discrepancies}
+    unmatched = document.metadata.get("parser_merge_discrepancies", [])
+    checks = {"reconciliation_executed": True, "no_conflicts": conflicts == 0, "no_missing_observations": missing == 0, "no_unmatched_parser_nodes": not unmatched}
     issues = [f"{conflicts} parser conflicts require review."] if conflicts else []
     if missing:
         issues.append(f"{missing} canonical nodes have missing observations.")
-    if merge_discrepancies:
-        issues.append(f"{len(merge_discrepancies)} parser nodes could not be matched and require review.")
+    if unmatched:
+        issues.append(f"{len(unmatched)} parser nodes could not be matched and require review.")
     return GateResult("B", GateStatus.PASS if all(checks.values()) else GateStatus.FAIL, checks, issues, ["reconciliation-report.json"]), report
 
 
