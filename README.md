@@ -6,21 +6,29 @@ Open-source framework for converting normative documents into structured, tracea
 
 This repository contains the generic document-intelligence layer for PDF and other normative sources. Domain-specific engineering semantics and calculation engines remain downstream consumers.
 
-## Pipeline
+## Protocol pipeline
 
 ```text
 Original source
     ↓
-Multi-parser ingestion
+Gate A — multi-parser observations
     ↓
-Canonical structural document model
+Gate B — reconciliation / discrepancy analysis
     ↓
-Structural recognition audit
+Gate C — fail-closed structural acceptance
     ↓
-Parser reconciliation / discrepancy analysis
+Gate D — persisted digital representation + revision hash
     ↓
-Verified digital representation
+Gate E — revision / verification evidence
+    ↓
+Gate F — graphical + external verification evidence
+    ↓
+Final DIGITAL_ACCEPTED gate
+    ↓
+Downstream normative/domain layer
 ```
+
+The executable gate contracts live in `src/ndi/verification.py`; the implementation contract is documented in `docs/VERIFICATION-GATES.md`.
 
 ## Principles
 
@@ -35,9 +43,11 @@ Verified digital representation
 
 The first real fixture is DBN V.2.5-56:2014 with Changes No. 1 and 2. Source PDFs are not redistributed by default; fixtures are referenced by provenance/hash and may be supplied through appropriately licensed storage.
 
+The repository contains the registered fixture identity and historical multi-parser benchmark evidence. Fresh execution against the 105-page fixture requires the licensed PDF to be supplied to the runner.
+
 ## Status
 
-Early development.
+The gate infrastructure A-F is implemented. Actual document acceptance remains evidence-driven: the DBN benchmark cannot be marked `DIGITAL_ACCEPTED` until fresh structural execution, graphical verification, external cross-check, independent verification records, regression, register synchronization and revision locking are present.
 
 ## License
 
