@@ -132,11 +132,15 @@ Implemented:
 - conversion of comparison differences into provenance-bound discrepancy evidence;
 - detection of missing observations, text differences, structural differences and anchor differences;
 - rejection of external comparison against a non-same-revision source;
-- fail-closed retrieval of external byte content with SHA-256 integrity verification.
+- fail-closed retrieval of external byte content with SHA-256 integrity verification;
+- independent external parser contract for verified retrieved bytes;
+- source-bound `ExternalParserObservation` artifacts with parser/version provenance;
+- fail-closed rejection of empty/duplicate parser configurations, tampered retrieved bytes, invalid parser output, wrong source binding and mismatched parser provenance;
+- public export of the independent external parsing API.
 
-**Milestones recorded:** external-source discovery/validation, executable cross-document comparison, and integrity-checked retrieval contracts are implemented and covered by regression tests.
+**Milestones recorded:** external-source discovery/validation, executable cross-document comparison, integrity-checked retrieval, and independent source parsing contracts are implemented and covered by regression tests. The independent parser provenance regression was corrected and the resulting commit is `768416966142d0ed9e0c5c023a2794cd86dfd175`.
 
-**Next Phase 3 work:** implement independent parsing of retrieved authoritative documents and bind parser output into `ExternalObservationSet`, then connect that result directly to the comparison engine.
+**Next Phase 3 work:** connect independently parsed external observations into `ExternalObservationSet` and feed the resulting source-bound canonical representation directly into the comparison engine, with deterministic multi-parser aggregation and fail-closed disagreement handling.
 
 Exit criterion: given a document identity, the engine can return validated source candidates and explicit reasons when no authoritative match is available, then retrieve a validated source and produce independently parsed comparison evidence.
 
