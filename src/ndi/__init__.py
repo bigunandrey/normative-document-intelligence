@@ -8,6 +8,7 @@ from .extractor import ExtractionError, extract_pdf, extract_pdf_evidence, marki
 from .validator import Quality, RecognitionAudit, RecognitionIssue, audit_document
 from .reconciliation import ReconciliationDecision, ReconciliationReport, reconcile_document
 from .verification import AcceptanceEvidence, ExternalCrossCheckRecord, GateResult, GateStatus, GraphicalVerificationRecord, RevisionRecord, digital_revision, final_acceptance, gate_a_observations, gate_b_reconciliation, gate_c_structural_acceptance, gate_d_persistence, gate_e_revision_infrastructure, gate_f_verification, merge_parser_documents, persist_digital_representation, write_revision_record
+from .source_registry import Compatibility, DocumentIdentity, SourceCandidate, SourceRecord, SourceRegistry, SourceType
 
 __all__ = [
     "BoundingBox", "CanonicalDocument", "CanonicalNode", "NodeType", "ParserObservation", "SourceAnchor", "stable_document_id", "stable_node_id",
@@ -18,4 +19,5 @@ __all__ = [
     "AcceptanceEvidence", "ExternalCrossCheckRecord", "GateResult", "GateStatus", "GraphicalVerificationRecord", "RevisionRecord",
     "digital_revision", "final_acceptance", "gate_a_observations", "gate_b_reconciliation", "gate_c_structural_acceptance", "gate_d_persistence",
     "gate_e_revision_infrastructure", "gate_f_verification", "merge_parser_documents", "persist_digital_representation", "write_revision_record",
+    "Compatibility", "DocumentIdentity", "SourceCandidate", "SourceRecord", "SourceRegistry", "SourceType",
 ]
