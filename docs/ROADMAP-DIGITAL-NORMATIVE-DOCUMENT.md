@@ -140,15 +140,17 @@ Implemented:
 - deterministic aggregation of independent external parser observations into `ExternalObservationSet`;
 - fail-closed rejection of parser disagreement rather than silently selecting one parser as truth;
 - direct `ExternalObservationSet → comparison engine` integration;
-- regression coverage for deterministic aggregation, disagreement handling, source binding and end-to-end external comparison handoff.
+- provider-bound fail-closed orchestration from identity/candidate discovery through retrieval, independent parsing, aggregation and comparison;
+- deterministic de-duplication of the same validated source across providers;
+- regression coverage for the complete provider-to-comparison path and parser disagreement.
 
-**Milestones recorded:** external-source discovery/validation, executable cross-document comparison, integrity-checked retrieval, independent source parsing, deterministic multi-parser aggregation, and comparison handoff are implemented and covered by regression tests. The independent parser provenance regression was corrected in commit `768416966142d0ed9e0c5c023a2794cd86dfd175`.
+**Milestones recorded:** external-source discovery/validation, executable cross-document comparison, integrity-checked retrieval, independent source parsing, deterministic multi-parser aggregation, comparison handoff, and provider-level orchestration are implemented. The independent parser provenance regression was corrected in commit `768416966142d0ed9e0c5c023a2794cd86dfd175`.
 
-**Phase 3 status:** the previously identified observation-to-comparison integration milestone is **COMPLETE for the implemented contract scope**. The external engine remains **IN PROGRESS** because the final provider-level orchestration and real authoritative-source execution are still required before the Phase 3 exit criterion can be closed.
+**Phase 3 status:** the generic external pipeline is **COMPLETE for the implemented contract scope**. Real authoritative provider implementations and real DBN execution remain integration work and are not claimed by this milestone.
 
-**Next Phase 3 work:** implement one fail-closed orchestration path from identity → validated source discovery → retrieval → independent parsing → deterministic aggregation → comparison evidence, then cover it with provider-level regression tests.
+**Transition:** move to **Phase 4 — Integrated reconciliation**. The next implementation must combine supplied multi-parser evidence and external-source evidence, preserve every discrepancy as provenance-linked machine-readable evidence, and block acceptance on unresolved conflicts.
 
-### Phase 4 — Integrated reconciliation — **NEXT ▶️**
+### Phase 4 — Integrated reconciliation — **IN PROGRESS ▶️**
 
 Combine parser evidence and external-source evidence without silent correction. Every discrepancy must remain machine-readable and provenance-linked; unresolved discrepancies block structural acceptance.
 
