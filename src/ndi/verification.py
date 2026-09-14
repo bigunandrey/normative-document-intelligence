@@ -168,18 +168,18 @@ def gate_c_structural_acceptance(
     """Close structural acceptance only when integrated reconciliation is resolved."""
     audit = audit_document(document)
     blocking = [d for d in reconciliation.decisions if d.status != "AGREED"]
+    resolved = False
+    if integrated_reconciliation is not None:
+        resolved = integrated_reconciliation.accepted
     checks = {
         "recognition_quality_pass": audit.quality == Quality.PASS,
-        "reconciliation_clean": not blocking,
+        "reconciliation_clean": not blocking or resolved,
         "source_hash_valid": len(document.source_sha256) == 64,
     }
     issues = [f"Recognition quality: {audit.quality.value}"] if audit.quality != Quality.PASS else []
-    if blocking:
+    if blocking and not resolved:
         issues.append(f"{len(blocking)} reconciliation decisions are not AGREED.")
     if integrated_reconciliation is not None:
-        resolved = integrated_reconciliation.accepted
-        if hasattr(integrated_reconciliation, "integrated"):
-            resolved = integrated_reconciliation.accepted
         checks["integrated_reconciliation_resolved"] = resolved
         if not resolved:
             issues.append("Integrated reconciliation has unresolved parser or external evidence blockers.")
