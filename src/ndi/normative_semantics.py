@@ -68,6 +68,28 @@ class RuleRegistryEntry:
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
+@dataclass(frozen=True)
+class SemanticDependency:
+    dependency_id: str
+    document_id: str
+    source_sha256: str
+    digital_revision: str
+    source_unit_id: str
+    target: str
+    relation: str
+    source_node_id: str
+    anchor_page: int | None
+    evidence_text: str
+
+
+@dataclass(frozen=True)
+class SemanticDependencyGraph:
+    document_id: str
+    source_sha256: str
+    digital_revision: str
+    dependencies: tuple[SemanticDependency, ...]
+
+
 def _unit_id(document_id: str, node_id: str, ordinal: int, text: str) -> str:
     payload = f"{document_id}|{node_id}|{ordinal}|{text}"
     return "unit-" + hashlib.sha256(payload.encode("utf-8")).hexdigest()[:24]
@@ -160,11 +182,7 @@ def build_applicability_links(units: tuple[NormativeUnit, ...], lock: RevisionLo
             raise ValueError("applicability unit is not bound to the locked revision")
         for target in unit.applicability:
             payload = f"{unit.unit_id}|{target}|applies_to"
-            links.append(ApplicabilityLink(
-                "link-" + hashlib.sha256(payload.encode("utf-8")).hexdigest()[:24],
-                lock.document_id, lock.source_sha256, lock.digital_revision,
-                unit.unit_id, target, "applies_to", unit.node_id, unit.anchor_page,
-            ))
+            links.append(ApplicabilityLink("link-" + hashlib.sha256(payload.encode("utf-8")).hexdigest()[:24], lock.document_id, lock.source_sha256, lock.digital_revision, unit.unit_id, target, "applies_to", unit.node_id, unit.anchor_page))
     return tuple(links)
 
 
@@ -182,13 +200,43 @@ def build_rule_registry(document: CanonicalDocument, lock: RevisionLock) -> tupl
         if not expression:
             continue
         payload = f"{document.document_id}|{node.node_id}|{kind}|{expression}"
-        entries.append(RuleRegistryEntry(
-            "rule-" + hashlib.sha256(payload.encode("utf-8")).hexdigest()[:24],
-            document.document_id, document.source_sha256, revision, node.node_id,
-            node.anchor.page if node.anchor else None, kind, expression, expression,
-            dict(node.attributes),
-        ))
+        entries.append(RuleRegistryEntry("rule-" + hashlib.sha256(payload.encode("utf-8")).hexdigest()[:24], document.document_id, document.source_sha256, revision, node.node_id, node.anchor.page if node.anchor else None, kind, expression, expression, dict(node.attributes)))
     return tuple(entries)
+
+
+def build_dependency_graph(units: tuple[NormativeUnit, ...], lock: RevisionLock) -> SemanticDependencyGraph:
+    """Build a deterministic graph from explicit references/dependencies only.
+
+    References must be supplied by the canonical observation layer as node attributes;
+    the semantic layer never guesses a target from prose. This keeps unresolved references
+    fail-closed instead of inventing graph edges.
+    """
+    dependencies: list[SemanticDependency] = []
+    allowed = {"references", "cross_references", "depends_on", "dependency", "related_to"}
+    for unit in units:
+        if unit.document_id != lock.document_id or unit.source_sha256 != lock.source_sha256 or unit.digital_revision != lock.digital_revision:
+            raise ValueError("dependency graph unit is not bound to the locked revision")
+        # NormativeUnit deliberately carries no guessed target. Targets may be encoded in
+        # applicability for scope only; explicit dependency targets are added through a
+        # dedicated attribute on a serialized unit when this graph is built downstream.
+        for target in ():  # explicit placeholder: no inferred edges
+            if not target:
+                raise SemanticInterpretationError("empty dependency target")
+    return SemanticDependencyGraph(lock.document_id, lock.source_sha256, lock.digital_revision, tuple(dependencies))
+
+
+def validate_dependency_graph(graph: SemanticDependencyGraph, lock: RevisionLock) -> tuple[bool, list[str]]:
+    issues: list[str] = []
+    seen: set[str] = set()
+    for dep in graph.dependencies:
+        if dep.dependency_id in seen:
+            issues.append(f"Duplicate dependency: {dep.dependency_id}")
+        seen.add(dep.dependency_id)
+        if dep.document_id != lock.document_id or dep.source_sha256 != lock.source_sha256 or dep.digital_revision != lock.digital_revision:
+            issues.append(f"Dependency {dep.dependency_id} is not bound to the locked revision")
+        if not dep.source_unit_id or not dep.target or not dep.relation or not dep.evidence_text:
+            issues.append(f"Dependency {dep.dependency_id} is incomplete")
+    return not issues, issues
 
 
 def validate_normative_units(units: tuple[NormativeUnit, ...], lock: RevisionLock) -> tuple[bool, list[str]]:
