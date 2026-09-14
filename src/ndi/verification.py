@@ -14,8 +14,8 @@ import json
 from pathlib import Path
 from typing import Any, Iterable
 
-from .canonical import CanonicalDocument, NodeType
-from .matching import compare_documents
+from .canonical import CanonicalDocument
+from .matching import compare_documents, match_nodes
 from .reconciliation import ReconciliationReport, reconcile_document
 from .validator import Quality, audit_document
 
@@ -101,19 +101,39 @@ class AcceptanceEvidence:
 
     def missing(self) -> list[str]:
         checks = asdict(self)
-        return [name for name, value in checks.items() if (value == 0 or value is False)]
+        return [name for name, value in checks.items() if value is False or value == 0]
 
 
-def gate_a_observations(
-    documents: Iterable[CanonicalDocument], *, required_parsers: set[str] | None = None
-) -> GateResult:
+def merge_parser_documents(documents: Iterable[CanonicalDocument]) -> CanonicalDocument:
+    """Merge parser-specific canonical documents into one evidence container.
+
+    Matching is conservative. Matched nodes receive additional observations;
+    unmatched nodes remain explicit instead of being silently discarded.
+    """
+    docs = list(documents)
+    if not docs:
+        raise ValueError("At least one parser document is required")
+    merged = docs[0]
+    for other in docs[1:]:
+        pairs = match_nodes(merged, other)
+        matched_right = {right_id for _, right_id in pairs}
+        for left_id, right_id in pairs:
+            target = merged.node(left_id)
+            source = other.node(right_id)
+            for observation in source.observations:
+                target.add_observation(observation)
+        for source in other.nodes:
+            if source.node_id not in matched_right:
+                merged.nodes.append(source)
+        merged.parser_versions.update(other.parser_versions)
+    return merged
+
+
+def gate_a_observations(documents: Iterable[CanonicalDocument], *, required_parsers: set[str] | None = None) -> GateResult:
     docs = list(documents)
     issues: list[str] = []
     checks: dict[str, bool] = {"documents_present": bool(docs)}
-    parsers: set[str] = set()
-    for document in docs:
-        for node in document.nodes:
-            parsers.update(o.parser for o in node.observations)
+    parsers = {o.parser for d in docs for n in d.nodes for o in n.observations}
     if required_parsers:
         missing = sorted(required_parsers - parsers)
         checks["required_parsers_present"] = not missing
@@ -139,22 +159,17 @@ def gate_b_reconciliation(document: CanonicalDocument) -> tuple[GateResult, Reco
 
 def gate_c_structural_acceptance(document: CanonicalDocument, reconciliation: ReconciliationReport) -> GateResult:
     audit = audit_document(document)
-    blocking_reconciliation = [d for d in reconciliation.decisions if d.status != "AGREED"]
-    checks = {
-        "recognition_quality_pass": audit.quality == Quality.PASS,
-        "reconciliation_clean": not blocking_reconciliation,
-        "source_hash_valid": bool(document.source_sha256) and len(document.source_sha256) == 64,
-    }
+    blocking = [d for d in reconciliation.decisions if d.status != "AGREED"]
+    checks = {"recognition_quality_pass": audit.quality == Quality.PASS, "reconciliation_clean": not blocking, "source_hash_valid": len(document.source_sha256) == 64}
     issues = [f"Recognition quality: {audit.quality.value}"] if audit.quality != Quality.PASS else []
-    if blocking_reconciliation:
-        issues.append(f"{len(blocking_reconciliation)} reconciliation decisions are not AGREED.")
+    if blocking:
+        issues.append(f"{len(blocking)} reconciliation decisions are not AGREED.")
     status = GateStatus.PASS if all(checks.values()) else GateStatus.FAIL
     return GateResult("C", status, checks, issues, ["structural-acceptance.json"])
 
 
 def digital_revision(document: CanonicalDocument) -> str:
-    payload = document.to_json().encode("utf-8")
-    return "sha256:" + hashlib.sha256(payload).hexdigest()
+    return "sha256:" + hashlib.sha256(document.to_json().encode("utf-8")).hexdigest()
 
 
 def persist_digital_representation(document: CanonicalDocument, output: Path) -> str:
@@ -182,30 +197,20 @@ def gate_e_revision_infrastructure(record: RevisionRecord, root: Path) -> GateRe
         path = write_revision_record(record, root)
     except FileExistsError:
         return GateResult("E", GateStatus.FAIL, {"revision_id_unique": False}, [f"Revision already exists: {record.revision_id}"])
-    checks = {
-        "revision_id_unique": path.is_file(),
-        "source_hash_recorded": len(record.source_hash) == 64,
-        "digital_revision_recorded": bool(record.digital_revision),
-        "reviewer_recorded": bool(record.reviewer_ai),
-        "result_recorded": record.result != "NOT_RECORDED",
-    }
-    status = GateStatus.PASS if all(checks.values()) else GateStatus.FAIL
-    return GateResult("E", status, checks, [], [str(path)])
+    checks = {"revision_id_unique": path.is_file(), "source_hash_recorded": len(record.source_hash) == 64, "digital_revision_recorded": bool(record.digital_revision), "reviewer_recorded": bool(record.reviewer_ai), "result_recorded": record.result != "NOT_RECORDED"}
+    return GateResult("E", GateStatus.PASS if all(checks.values()) else GateStatus.FAIL, checks, [], [str(path)])
 
 
-def gate_f_verification(
-    graphical: GraphicalVerificationRecord, external: ExternalCrossCheckRecord
-) -> GateResult:
-    graphical_ok = graphical.result == "PASS" and bool(graphical.checked_pages)
-    external_ok = external.result == "PASS" and bool(external.sources)
+def gate_f_verification(graphical: GraphicalVerificationRecord, external: ExternalCrossCheckRecord) -> GateResult:
+    graphical_ok = graphical.result == "PASS" and bool(graphical.checked_pages) and bool(graphical.checks)
+    external_ok = external.result == "PASS" and bool(external.sources) and bool(external.checks)
     checks = {"graphical_verification": graphical_ok, "external_cross_check": external_ok}
-    issues: list[str] = []
+    issues = []
     if not graphical_ok:
         issues.append("Graphical verification evidence is incomplete or not PASS.")
     if not external_ok:
         issues.append("External cross-check evidence is incomplete or not PASS.")
-    status = GateStatus.PASS if all(checks.values()) else GateStatus.FAIL
-    return GateResult("F", status, checks, issues, ["graphical-verification.json", "external-cross-check.json"])
+    return GateResult("F", GateStatus.PASS if all(checks.values()) else GateStatus.FAIL, checks, issues, ["graphical-verification.json", "external-cross-check.json"])
 
 
 def final_acceptance(evidence: AcceptanceEvidence) -> GateResult:
