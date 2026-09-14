@@ -1,27 +1,8 @@
 {
-  "benchmark": "DBN V.2.5-56:2014 + Changes 1 and 2",
-  "execution": {
-    "executed_by": "repository maintainer",
-    "execution_environment": "local Windows environment",
-    "runner": "tools/dbn_benchmark.py"
-  },
-  "source": {
-    "filename": "ДБН В.2.5-56_2014 Системи протипожежного захисту зі Зміною № 1 та 2.pdf",
-    "source_sha256": "fbaa2493ed510d621e8f368ec4910e5cc30d177744f22356fe3a120bbe5a5056",
-    "size_bytes": 23532218,
-    "page_count": 105,
-    "identity_verified": true
-  },
-  "parsers": [
-    {
-      "parser": "MarkItDown",
-      "version": "0.1.7",
-      "elapsed_seconds": 8.41,
-      "characters": 491675,
-      "lines": 6388,
-      "headings": 0,
-      "table_like_lines": 3375,
-      "numbered_items": 0
-    }
-  ]
+  "status": "SUPERSEDED",
+  "reason": "The recorded numbered_items metric was generated with an invalid regular-expression escape in the benchmark runner.",
+  "source_sha256": "fbaa2493ed510d621e8f368ec4910e5cc30d177744f22356fe3a120bbe5a5056",
+  "page_count": 105,
+  "historical_authoritative_baseline": "MIGRATED-BASELINE.json",
+  "historical_markitdown_numbered_items": 16
 }
