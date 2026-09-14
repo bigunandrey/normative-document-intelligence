@@ -136,15 +136,19 @@ Implemented:
 - independent external parser contract for verified retrieved bytes;
 - source-bound `ExternalParserObservation` artifacts with parser/version provenance;
 - fail-closed rejection of empty/duplicate parser configurations, tampered retrieved bytes, invalid parser output, wrong source binding and mismatched parser provenance;
-- public export of the independent external parsing API.
+- public export of the independent external parsing API;
+- deterministic aggregation of independent external parser observations into `ExternalObservationSet`;
+- fail-closed rejection of parser disagreement rather than silently selecting one parser as truth;
+- direct `ExternalObservationSet → comparison engine` integration;
+- regression coverage for deterministic aggregation, disagreement handling, source binding and end-to-end external comparison handoff.
 
-**Milestones recorded:** external-source discovery/validation, executable cross-document comparison, integrity-checked retrieval, and independent source parsing contracts are implemented and covered by regression tests. The independent parser provenance regression was corrected and the resulting commit is `768416966142d0ed9e0c5c023a2794cd86dfd175`.
+**Milestones recorded:** external-source discovery/validation, executable cross-document comparison, integrity-checked retrieval, independent source parsing, deterministic multi-parser aggregation, and comparison handoff are implemented and covered by regression tests. The independent parser provenance regression was corrected in commit `768416966142d0ed9e0c5c023a2794cd86dfd175`.
 
-**Next Phase 3 work:** connect independently parsed external observations into `ExternalObservationSet` and feed the resulting source-bound canonical representation directly into the comparison engine, with deterministic multi-parser aggregation and fail-closed disagreement handling.
+**Phase 3 status:** the previously identified observation-to-comparison integration milestone is **COMPLETE for the implemented contract scope**. The external engine remains **IN PROGRESS** because the final provider-level orchestration and real authoritative-source execution are still required before the Phase 3 exit criterion can be closed.
 
-Exit criterion: given a document identity, the engine can return validated source candidates and explicit reasons when no authoritative match is available, then retrieve a validated source and produce independently parsed comparison evidence.
+**Next Phase 3 work:** implement one fail-closed orchestration path from identity → validated source discovery → retrieval → independent parsing → deterministic aggregation → comparison evidence, then cover it with provider-level regression tests.
 
-### Phase 4 — Integrated reconciliation
+### Phase 4 — Integrated reconciliation — **NEXT ▶️**
 
 Combine parser evidence and external-source evidence without silent correction. Every discrepancy must remain machine-readable and provenance-linked; unresolved discrepancies block structural acceptance.
 
