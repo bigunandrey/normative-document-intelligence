@@ -1,6 +1,6 @@
 import pytest
 
-from ndi import BoundingBox, CanonicalDocument, CanonicalNode, NodeType, SourceAnchor, build_applicability_links, build_normative_units, build_revision_lock, build_rule_registry, validate_normative_units
+from ndi import BoundingBox, CanonicalDocument, CanonicalNode, NodeType, SourceAnchor, build_applicability_links, build_dependency_graph, build_normative_units, build_revision_lock, build_rule_registry, validate_dependency_graph, validate_normative_units
 from ndi.normative_semantics import SemanticInterpretationError, decompose_normative_node
 
 SHA = "a" * 64
@@ -66,3 +66,25 @@ def test_table_and_formula_rule_registry_is_deterministic_and_bound():
     rules = build_rule_registry(d, lock)
     assert [(r.rule_kind, r.node_id) for r in rules] == [("table", "table-1"), ("formula", "formula-1")]
     assert all(r.source_sha256 == SHA and r.digital_revision == lock.digital_revision for r in rules)
+
+
+def test_dependency_graph_uses_only_explicit_source_targets():
+    d = doc("The system shall comply with clause 5.2.", attributes={"references": ["clause:5.2"]})
+    lock = build_revision_lock(d)
+    units = build_normative_units(d, lock)
+    graph = build_dependency_graph(units, lock)
+    assert len(graph.dependencies) == 1
+    dep = graph.dependencies[0]
+    assert dep.target == "clause:5.2"
+    assert dep.relation == "depends_on"
+    assert dep.source_node_id == "node-1"
+    assert dep.evidence_text == units[0].source_text
+    assert validate_dependency_graph(graph, lock) == (True, [])
+
+
+def test_dependency_graph_rejects_unbound_unit():
+    d = doc("The system shall comply with clause 5.2.", attributes={"references": ["clause:5.2"]})
+    other = doc("The system shall comply with clause 6.1.")
+    units = build_normative_units(d, build_revision_lock(d))
+    with pytest.raises(ValueError):
+        build_dependency_graph(units, build_revision_lock(other))
