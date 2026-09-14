@@ -10,6 +10,7 @@ from ndi import (
     ResolutionAction,
     ResolutionDecision,
     SourceAnchor,
+    gate_b_reconciliation,
     gate_c_structural_acceptance,
     reconcile_with_external,
     resolve_reconciliation,
@@ -29,12 +30,12 @@ def make_doc(conflict=False):
 def test_gate_c_accepts_only_resolved_integrated_reconciliation():
     clean = make_doc()
     report = reconcile_with_external(clean, ())
-    _, parser_report = __import__("ndi").gate_b_reconciliation(clean)
+    _, parser_report = gate_b_reconciliation(clean)
     assert gate_c_structural_acceptance(clean, parser_report, report).status == "PASS"
 
     conflict = make_doc(conflict=True)
     integrated = reconcile_with_external(conflict, ())
-    _, conflict_report = __import__("ndi").gate_b_reconciliation(conflict)
+    _, conflict_report = gate_b_reconciliation(conflict)
     result = gate_c_structural_acceptance(conflict, conflict_report, integrated)
     assert result.status == "FAIL"
     assert not result.checks["integrated_reconciliation_resolved"]
@@ -54,9 +55,9 @@ def test_resolved_blocker_can_close_gate_c_without_mutating_document():
     )
     assert resolved.accepted
     assert doc.to_json() == original
-    _, parser_report = __import__("ndi").gate_b_reconciliation(doc)
-    result = gate_c_structural_acceptance(doc, parser_report, integrated)
-    assert result.status == "FAIL"
+    _, parser_report = gate_b_reconciliation(doc)
+    result = gate_c_structural_acceptance(doc, parser_report, resolved)
+    assert result.status == "PASS"
 
 
 def test_external_blocker_remains_blocking_until_explicit_resolution():
