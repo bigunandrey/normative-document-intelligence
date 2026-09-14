@@ -144,11 +144,28 @@ source identity
 
 Fresh execution must be separately recorded from historical benchmark evidence. The full 105-page / ~22.4 MB DBN fixture is known to exist in Dropbox, but the current retrieval interface cannot provide the complete binary to this execution environment. Therefore no fresh end-to-end DBN result is claimed until the complete source bytes are available.
 
-Current implementation task: make the DBN end-to-end gate executable from a locally/CI-accessible fixture and produce a deterministic evidence manifest that distinguishes **FRESH_EXECUTION** from **HISTORICAL_BASELINE**.
+**Current implementation status:**
+- DBN evidence manifest and explicit `FRESH_EXECUTION` / `HISTORICAL_BASELINE` distinction implemented;
+- DBN structural gate implemented fail-closed;
+- regression coverage added for evidence identity, historical-baseline rejection, missing regression evidence and source-hash mismatch;
+- Gate C integrated-reconciliation regression fixed and GitHub-verified;
+- latest verified CI run: `34885620846` (#157) — **SUCCESS**.
 
-### Phase 6 — Graphical verification
+**Remaining Phase 5 work:**
+1. make the complete DBN fixture available to the CI execution environment;
+2. execute the real registered multi-parser path against the 105-page source;
+3. produce fresh parser/reconciliation/external-cross-check evidence;
+4. complete full-DBN structural regression evidence;
+5. close Phase 5 only after the complete chain is freshly verified.
 
-Verify visually critical information: tables/merged cells, formulas, numerical values, symbols/operators, notes, numbering, headers/footers, amendments/deletions, page breaks/reading order and structurally relevant figures.
+### Phase 6 — Graphical verification — **IN PROGRESS 🔄**
+
+Implemented the fail-closed graphical-verification evidence contract and regression coverage for visually critical information. This includes explicit evidence handling for tables/merged cells, formulas, numerical values, symbols/operators, notes, numbering, headers/footers, amendments/deletions, page breaks/reading order and structurally relevant figures.
+
+**Remaining Phase 6 work:**
+1. connect graphical evidence to the canonical document and Gate C acceptance chain;
+2. define deterministic page/region evidence references and verification results;
+3. add DBN-specific graphical regression fixtures/evidence once the complete PDF is CI-accessible.
 
 ### Phase 7 — Digital representation persistence and revision lock
 
