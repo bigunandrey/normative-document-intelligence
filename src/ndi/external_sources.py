@@ -4,9 +4,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Any, Mapping, Protocol, Sequence
+from typing import TYPE_CHECKING, Any, Mapping, Protocol, Sequence
 
 from .source_registry import Compatibility, DocumentIdentity, SourceCandidate
+
+if TYPE_CHECKING:
+    from .external_parsing import ExternalParserObservation
 
 
 class DiscoveryStatus(StrEnum):
@@ -41,12 +44,22 @@ class ExternalDocument:
 
 @dataclass(frozen=True)
 class ExternalObservationSet:
-    """Parser observations produced independently from an external source."""
+    """Deterministically aggregated independent parser observations for one source."""
 
     document: ExternalDocument
-    parser: str
-    parser_version: str
-    observations: tuple[Mapping[str, Any], ...] = ()
+    parser_observations: tuple[ExternalParserObservation, ...]
+    canonical_document: Any
+
+    def __post_init__(self) -> None:
+        if self.document.source.compatibility != Compatibility.SAME_REVISION:
+            raise ValueError("External observations require a validated same-revision source")
+        if not self.parser_observations:
+            raise ValueError("ExternalObservationSet requires at least one parser observation")
+        source_sha = self.parser_observations[0].source_sha256
+        if any(item.source_sha256 != source_sha for item in self.parser_observations):
+            raise ValueError("ExternalObservationSet parser observations must share one source SHA-256")
+        if self.canonical_document.source_sha256 != source_sha:
+            raise ValueError("ExternalObservationSet canonical document is not source-bound")
 
 
 class DiscrepancyKind(StrEnum):
