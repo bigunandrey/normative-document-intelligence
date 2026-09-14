@@ -6,7 +6,14 @@ from dataclasses import dataclass
 from typing import Sequence
 
 from .canonical import CanonicalDocument
-from .external_sources import CrossCheckResult, DiscrepancyEvidence, DiscrepancyKind, DiscoveryStatus, ValidatedSource
+from .external_sources import (
+    CrossCheckResult,
+    DiscrepancyEvidence,
+    DiscrepancyKind,
+    DiscoveryStatus,
+    ExternalObservationSet,
+    ValidatedSource,
+)
 from .matching import compare_documents
 
 
@@ -55,6 +62,18 @@ def compare_against_external(
             )
         )
     return ExternalComparisonResult(source=source, discrepancies=tuple(discrepancies))
+
+
+def compare_observation_set(
+    supplied: CanonicalDocument,
+    external: ExternalObservationSet,
+) -> ExternalComparisonResult:
+    """Feed an aggregated, parser-agreed external representation into comparison."""
+    return compare_against_external(
+        supplied,
+        external.canonical_document,
+        external.document.source,
+    )
 
 
 def compare_discovered_sources(
