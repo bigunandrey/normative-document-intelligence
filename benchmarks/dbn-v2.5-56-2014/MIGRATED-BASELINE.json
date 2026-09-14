@@ -1,8 +1,14 @@
 {
   "status": "MIGRATED_HISTORICAL_BASELINE",
-  "source_sha256": "fbaa2493ed510d621e8f368ec4910e5cc30d177744f22356fe3a120bbe5a5056",
-  "size_bytes": 23532218,
-  "page_count": 105,
+  "source": {
+    "repository": "bigunandrey/fire-protection-engine",
+    "branch": "feature/document-ingestion",
+    "fixture_path": "tests/fixtures/document-ingestion/ДБН В.2.5-56_2014 Системи протипожежного захисту зі Зміною № 1 та 2.pdf",
+    "fixture_blob_sha1": "4f52a72bb77347031501a9be72fdb676bda25026",
+    "sha256": "fbaa2493ed510d621e8f368ec4910e5cc30d177744f22356fe3a120bbe5a505",
+    "size_bytes": 23532218,
+    "page_count": 105
+  },
   "parser_benchmark_run": "34839092802",
   "ingestion_run": "34831546595",
   "parsers": {
