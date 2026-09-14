@@ -4,7 +4,7 @@ import pytest
 
 from ndi import CanonicalDocument, DocumentIdentity, SourceCandidate, SourceType, ValidatedSource
 from ndi.external_retrieval import retrieve_validated, verify_retrieved_bytes
-from ndi.external_parsing import parse_retrieved_external
+from ndi.external_parsing import aggregate_external_observations, parse_retrieved_external
 from ndi.source_registry import Compatibility
 from ndi.external_sources import ExternalDocument
 
@@ -97,3 +97,43 @@ def test_independent_external_parser_rejects_wrong_source_hash():
     retrieved = retrieve_validated(Provider(b"pdf"), source(b"pdf"))
     with pytest.raises(ValueError, match="another source"):
         parse_retrieved_external(retrieved, (BadParser(),))
+
+
+def test_external_observations_aggregate_deterministically():
+    retrieved = retrieve_validated(Provider(b"pdf"), source(b"pdf"))
+
+    class ParserA(Parser):
+        name = "a"
+
+    class ParserB(Parser):
+        name = "b"
+
+    observations = parse_retrieved_external(retrieved, (ParserB(), ParserA()))
+    result = aggregate_external_observations(retrieved.document, observations)
+    assert [(item.parser, item.parser_version) for item in result.parser_observations] == [("a", "1.0"), ("b", "1.0")]
+    assert result.canonical_document is result.parser_observations[0].document
+
+
+def test_external_observations_fail_closed_on_parser_disagreement():
+    retrieved = retrieve_validated(Provider(b"pdf"), source(b"pdf"))
+
+    class ParserA(Parser):
+        name = "a"
+
+    class ParserB(Parser):
+        name = "b"
+
+        def parse(self, content, *, source_name, source_sha256):
+            return CanonicalDocument("external-test", source_name, source_sha256, 1, [], {self.name: self.version},)
+
+    observations = parse_retrieved_external(retrieved, (ParserA(), ParserB()))
+    with pytest.raises(ValueError, match="disagreement"):
+        aggregate_external_observations(retrieved.document, observations)
+
+
+def test_external_observations_reject_wrong_retrieved_sha_metadata():
+    retrieved = retrieve_validated(Provider(b"pdf"), source(b"pdf"))
+    observations = parse_retrieved_external(retrieved, (Parser(),))
+    tampered_document = ExternalDocument(retrieved.document.source, retrieved.document.content, {"sha256": "0" * 64})
+    with pytest.raises(ValueError, match="retrieved source SHA-256"):
+        aggregate_external_observations(tampered_document, observations)
