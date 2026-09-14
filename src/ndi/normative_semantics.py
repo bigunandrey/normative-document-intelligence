@@ -6,7 +6,7 @@ from dataclasses import asdict, dataclass, field
 import hashlib
 import json
 import re
-from typing import Any
+from typing import Any, Iterable, Mapping
 
 from .canonical import CanonicalDocument, CanonicalNode, NodeType
 from .revision_lock import RevisionLock
@@ -178,10 +178,76 @@ def build_applicability_links(units: tuple[NormativeUnit, ...], lock: RevisionLo
     for unit in units:
         if unit.document_id != lock.document_id or unit.source_sha256 != lock.source_sha256 or unit.digital_revision != lock.digital_revision:
             raise ValueError("applicability unit is not bound to the locked revision")
+        if unit.applicability and not unit.subject_type:
+            raise SemanticInterpretationError(f"Normative unit {unit.unit_id} has applicability but no subject type")
         for target in unit.applicability:
+            if not target:
+                raise SemanticInterpretationError(f"Normative unit {unit.unit_id} has an empty applicability target")
             payload = f"{unit.unit_id}|{target}|applies_to"
             links.append(ApplicabilityLink("link-" + hashlib.sha256(payload.encode("utf-8")).hexdigest()[:24], lock.document_id, lock.source_sha256, lock.digital_revision, unit.unit_id, target, "applies_to", unit.node_id, unit.anchor_page))
     return tuple(links)
+
+
+def validate_applicability_links(
+    links: tuple[ApplicabilityLink, ...],
+    units: tuple[NormativeUnit, ...],
+    lock: RevisionLock,
+    *,
+    document: CanonicalDocument | None = None,
+    known_targets: Iterable[str] | Mapping[str, Any] | None = None,
+) -> tuple[bool, list[str]]:
+    """Validate applicability/type links and optionally resolve their targets.
+
+    Resolution is explicit: this function never invents targets from prose. When
+    ``known_targets`` is supplied, every applicability target must be present in it.
+    """
+    issues: list[str] = []
+    seen: set[str] = set()
+    units_by_id = {unit.unit_id: unit for unit in units}
+    nodes_by_id = {node.node_id: node for node in document.nodes} if document is not None else {}
+    resolved_targets = set(known_targets.keys()) if isinstance(known_targets, Mapping) else (set(known_targets) if known_targets is not None else None)
+
+    for unit in units:
+        if unit.unit_id in units_by_id and unit.applicability and not unit.subject_type:
+            issues.append(f"Unit {unit.unit_id} has applicability but no subject type")
+        if unit.document_id != lock.document_id or unit.source_sha256 != lock.source_sha256 or unit.digital_revision != lock.digital_revision:
+            issues.append(f"Unit {unit.unit_id} is not bound to the locked revision")
+
+    for link in links:
+        if link.link_id in seen:
+            issues.append(f"Duplicate applicability link: {link.link_id}")
+        seen.add(link.link_id)
+        if link.document_id != lock.document_id or link.source_sha256 != lock.source_sha256 or link.digital_revision != lock.digital_revision:
+            issues.append(f"Link {link.link_id} is not bound to the locked revision")
+        if not link.unit_id or not link.target or not link.relation or not link.source_node_id:
+            issues.append(f"Applicability link {link.link_id} is incomplete")
+            continue
+        unit = units_by_id.get(link.unit_id)
+        if unit is None:
+            issues.append(f"Applicability link {link.link_id} references unknown unit {link.unit_id}")
+            continue
+        if link.target not in unit.applicability:
+            issues.append(f"Applicability link {link.link_id} target is absent from unit {link.unit_id}")
+        if link.source_node_id != unit.node_id or link.anchor_page != unit.anchor_page:
+            issues.append(f"Applicability link {link.link_id} source anchor does not match unit {link.unit_id}")
+        if document is not None:
+            node = nodes_by_id.get(link.source_node_id)
+            if node is None:
+                issues.append(f"Applicability link {link.link_id} references unknown source node {link.source_node_id}")
+            elif (node.anchor.page if node.anchor else None) != link.anchor_page:
+                issues.append(f"Applicability link {link.link_id} has an invalid source page")
+        if resolved_targets is not None and link.target not in resolved_targets:
+            issues.append(f"Applicability target is unresolved: {link.target}")
+        if link.relation != "applies_to":
+            issues.append(f"Unsupported applicability relation: {link.relation}")
+
+    expected = {(unit.unit_id, target) for unit in units for target in unit.applicability}
+    actual = {(link.unit_id, link.target) for link in links}
+    for unit_id, target in sorted(expected - actual):
+        issues.append(f"Missing applicability link for {unit_id}: {target}")
+    for unit_id, target in sorted(actual - expected):
+        issues.append(f"Unexpected applicability link for {unit_id}: {target}")
+    return not issues, issues
 
 
 def build_rule_registry(document: CanonicalDocument, lock: RevisionLock) -> tuple[RuleRegistryEntry, ...]:
@@ -272,4 +338,10 @@ def validate_normative_units(units: tuple[NormativeUnit, ...], lock: RevisionLoc
             issues.append(f"Unit {unit.unit_id} is not bound to the locked revision")
         if not unit.source_text or not unit.operator or not unit.predicate:
             issues.append(f"Unit {unit.unit_id} is incomplete")
+        if unit.applicability and not unit.subject_type:
+            issues.append(f"Unit {unit.unit_id} has applicability but no subject type")
+        if any(not target for target in unit.applicability):
+            issues.append(f"Unit {unit.unit_id} has an empty applicability target")
+        if len(set(unit.applicability)) != len(unit.applicability):
+            issues.append(f"Unit {unit.unit_id} has duplicate applicability targets")
     return not issues, issues
