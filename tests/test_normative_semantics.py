@@ -1,7 +1,7 @@
 import pytest
 
-from ndi import BoundingBox, CanonicalDocument, CanonicalNode, NodeType, SourceAnchor, build_applicability_links, build_amendment_actions, build_dependency_graph, build_normative_units, build_revision_lock, build_rule_registry, evaluate_normative_unit, evaluate_normative_units, validate_amendment_actions, validate_dependency_graph, validate_normative_units
-from ndi.normative_semantics import SemanticInterpretationError, decompose_normative_node
+from ndi import BoundingBox, CanonicalDocument, CanonicalNode, NodeType, SourceAnchor, build_applicability_links, build_amendment_actions, build_dependency_graph, build_normative_units, build_revision_lock, build_rule_registry, evaluate_normative_unit, evaluate_normative_units, validate_amendment_actions, validate_applicability_links, validate_dependency_graph, validate_normative_units
+from ndi.normative_semantics import SemanticInterpretationError, decompose_normative_node, ApplicabilityLink
 from ndi.amendment_semantics import AmendmentInterpretationError
 
 SHA = "a" * 64
@@ -57,6 +57,35 @@ def test_applicability_and_subject_type_are_source_bound():
     links = build_applicability_links(units, lock)
     assert [link.target for link in links] == ["sprinkler_systems", "protected_buildings"]
     assert all(link.source_sha256 == SHA and link.digital_revision == lock.digital_revision for link in links)
+    assert validate_applicability_links(links, units, lock, document=d, known_targets={"sprinkler_systems": "system", "protected_buildings": "building"}) == (True, [])
+
+
+def test_applicability_validation_fails_on_unresolved_target():
+    d = doc("The system shall provide fire detection.", attributes={"applicability": ["unknown_scope"], "subject_type": "system"})
+    lock = build_revision_lock(d)
+    units = build_normative_units(d, lock)
+    links = build_applicability_links(units, lock)
+    ok, issues = validate_applicability_links(links, units, lock, document=d, known_targets={"known_scope": "system"})
+    assert not ok
+    assert "Applicability target is unresolved: unknown_scope" in issues
+
+
+def test_applicability_validation_fails_on_missing_subject_type():
+    d = doc("The system shall provide fire detection.", attributes={"applicability": ["protected_buildings"]})
+    lock = build_revision_lock(d)
+    with pytest.raises(SemanticInterpretationError):
+        build_applicability_links(build_normative_units(d, lock), lock)
+
+
+def test_applicability_validation_fails_on_tampered_link():
+    d = doc("The system shall provide fire detection.", attributes={"applicability": ["protected_buildings"], "subject_type": "system"})
+    lock = build_revision_lock(d)
+    units = build_normative_units(d, lock)
+    link = build_applicability_links(units, lock)[0]
+    tampered = ApplicabilityLink(link.link_id, link.document_id, link.source_sha256, link.digital_revision, link.unit_id, link.target, link.relation, "node-missing", link.anchor_page)
+    ok, issues = validate_applicability_links((tampered,), units, lock, document=d)
+    assert not ok
+    assert any("source anchor" in issue or "unknown source node" in issue for issue in issues)
 
 
 def test_table_and_formula_rule_registry_is_deterministic_and_bound():
