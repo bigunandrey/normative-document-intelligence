@@ -143,9 +143,9 @@ def from_records(
     expanded: list[Mapping[str, Any]] = []
     for item in records:
         start = len(expanded)
-        for child in _expand_structural_record(item):
+        for child_index, child in enumerate(_expand_structural_record(item)):
             child_data = dict(child)
-            if child_data.get("parent_ordinal") is not None:
+            if child_index > 0 and child_data.get("parent_ordinal") is not None:
                 child_data["parent_ordinal"] = int(child_data["parent_ordinal"]) + start
             expanded.append(child_data)
 
