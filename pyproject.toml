@@ -16,4 +16,4 @@ ndi-ingest = "ndi.cli:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
+pythonpath = ["src", "."]
