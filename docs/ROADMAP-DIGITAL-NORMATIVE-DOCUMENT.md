@@ -11,150 +11,68 @@ The target is not merely a parser that extracts PDF text. The system must produc
 The target chain is:
 
 ```text
-USER PDF
-  ↓
-Document identity / edition / amendments
-  ↓
-Primary-source integrity
-  ↓
-Multi-parser extraction
-  ↓
-Canonical structural observations
-  ↓
-External authoritative-source discovery
-  ↓
-External-source validation + retrieval
-  ↓
-Cross-source / cross-parser comparison
-  ↓
-Discrepancy detection and evidence package
-  ↓
-Reconciliation / resolution
-  ↓
-Graphical verification
-  ↓
-Canonical digital representation
-  ↓
-Revision + verification lock
-  ↓
-Independent AI verification
-  ↓
-Regression
-  ↓
-DIGITAL_ACCEPTED
-  ↓
-Downstream normative semantics
+USER PDF → identity/revision → integrity → multi-parser observations → external evidence → comparison → reconciliation → graphical verification → canonical representation → revision lock → independent AI verification → regression → DIGITAL_ACCEPTED → downstream normative semantics
 ```
 
-## 2. Why the previous A–F sequence is being replaced
-
-The previous roadmap treated external cross-checking as a late Gate F activity. That is too late and too weak.
-
-External authoritative sources are not only a final verification layer. They are an **evidence source for structural recognition itself**. They may be needed when a parser:
-
-- misses a paragraph, table, cell, formula, heading or amendment;
-- produces conflicting text or numbers;
-- loses page/reading-order information;
-- misreads decimal separators, operators or symbols;
-- cannot distinguish headers/footers from normative content;
-- fails to identify an amendment or deletion.
-
-Therefore external-source discovery and validation must be implemented **before structural acceptance is closed**, while the final external cross-check remains part of the acceptance chain.
-
-## 3. New implementation phases
+## 2. Implementation phases
 
 ### Phase 0 — CI and baseline recovery — **COMPLETE ✅**
 
-Completed and GitHub-verified. The regression fixes restored a green `main` baseline.
-
 ### Phase 1 — Document identity and source registry — **COMPLETE ✅**
 
-Completed for the implemented contract scope. Identity, revision compatibility, source SHA-256 validation and source-candidate evidence are implemented and tested.
-
 ### Phase 2 — Complete parser-observation layer — **IN PROGRESS 🔄**
-
-Implemented baseline includes the canonical parser-neutral model, adapters for MarkItDown/pypdf/Docling/OpenDataLoader, deterministic registered ingestion, provenance/geometry/span handling, structural aliases, observation manifests, adapter contract validation and regression coverage.
 
 Remaining: complete structural recognition for all configured parser outputs; execute the registered DBN fixture through the real multi-parser path; complete full-DBN structural regression evidence. Fresh DBN execution is not claimed because the complete 22.4 MB fixture is not currently available to the CI execution environment.
 
 ### Phase 3 — External Source Discovery & Cross-Check Engine — **COMPLETE FOR CONTRACT SCOPE ✅**
 
-Implemented provider-neutral discovery → validation → retrieval → independent parsing → aggregation → comparison → discrepancy-evidence chain, including fail-closed source integrity and parser disagreement handling. Real authoritative provider implementations and real DBN execution remain integration work.
-
 ### Phase 4 — Integrated reconciliation — **COMPLETE FOR CONTRACT SCOPE ✅**
-
-Implemented integrated parser + external evidence, explicit blocking/resolution, immutable provenance-linked resolution decisions, fail-closed blocker disposition, source-bound canonical preservation and Gate C integration. Resolution never silently rewrites normative content.
 
 ### Phase 5 — Structural acceptance / DBN end-to-end gate — **IN PROGRESS ▶️**
 
-Target: **DBN В.2.5-56:2014 зі Зміною №1 та №2**.
-
-Implemented DBN evidence manifest, explicit fresh-vs-historical distinction, fail-closed DBN structural gate and regression coverage. Fresh 105-page execution, authoritative cross-check evidence and full-DBN regression remain blocked until the complete source bytes are CI-accessible.
+Target: **DBN В.2.5-56:2014 зі Зміною №1 та №2**. Fresh 105-page execution, authoritative cross-check evidence and full-DBN regression remain blocked until the complete source bytes are CI-accessible.
 
 ### Phase 6 — Graphical verification — **IN PROGRESS 🔄**
 
-Implemented fail-closed graphical evidence contract, source/page/verifier/timestamp validation, critical-category coverage and Gate C integration. Remaining: deterministic page/region evidence references and DBN-specific graphical fixtures once the complete PDF is CI-accessible.
+Remaining: deterministic page/region evidence references and DBN-specific graphical fixtures once the complete PDF is CI-accessible.
 
 ### Phase 7 — Digital representation persistence and revision lock — **COMPLETE FOR CONTRACT SCOPE ✅**
 
-Implemented and GitHub-verified:
-- immutable deterministic revision IDs;
-- source SHA-256 binding;
-- canonical digital-revision hash;
-- immutable revision-directory persistence;
-- reproducibility manifest with protocol/parser/evidence hashes;
-- fail-closed duplicate revision protection;
-- verification of stored representation against source-bound document and revision hash;
-- tamper detection for canonical representation and manifest source binding;
-- deterministic evidence-hash ordering.
-
-Latest verified CI run: `34886488863` (#168) — **SUCCESS**, `pytest -q` — **SUCCESS**.
+Generic immutable revision lock and reproducibility contract implemented and GitHub-verified.
 
 ### Phase 8 — Independent AI verification and final acceptance — **COMPLETE FOR CONTRACT SCOPE ✅**
 
-Implemented and GitHub-verified:
-- source/document/revision-bound `AIVerificationRecord`;
-- explicit verifier and model identity;
-- explicit verification scope and checks;
-- cryptographic evidence hash for each verification record;
-- explicit independence basis;
-- duplicate-verifier rejection;
-- fail-closed requirement for at least two independent successful AI verifications;
-- final acceptance gate bound to the locked revision;
-- regression coverage for missing, duplicate, mismatched and non-PASS verification evidence.
-
-Latest verified CI run: `34886851497` (#174) — **SUCCESS**, `pytest -q` — **SUCCESS**.
-
-**Phase 8 limitation:** this closes the generic contract only. It does not constitute two real-world independent AI reviews of the DBN fixture; those remain evidence-generation work when the complete DBN source and verification workflow are available.
+Generic source/document/revision-bound independent-AI verification contract and final acceptance gate implemented and GitHub-verified. Real-world independent DBN reviews remain evidence-generation work.
 
 ### Phase 9 — Downstream normative semantics — **IN PROGRESS ▶️**
 
 Goal: transform the accepted canonical document into deterministic, source-bound normative semantics without altering the locked digital representation.
 
-**Completed:**
+**Completed and CI-verified:**
 - atomic normative-unit decomposition;
 - exact normative operators for requirements, prohibitions, recommendations and permissions;
-- preservation of conditions and exceptions;
-- source/document/revision-bound semantic units with canonical IDs and source text;
+- conditions and exceptions;
 - applicability/type links;
 - table/formula rule registry primitives;
-- fail-closed ambiguity handling for conflicting normative operators;
-- regression coverage for the implemented decomposition/operator contract.
+- explicit dependency/cross-reference graph;
+- deterministic source-bound semantic evaluation model;
+- fail-closed handling of unresolved applicability/conditions during evaluation;
+- regression coverage for the implemented semantic chain.
 
 **Remaining:**
 - amendment/deletion semantics;
-- dependency and cross-reference graph;
-- deterministic semantic execution/evaluation model;
-- stronger validation of applicability/type links and rule registries;
-- provenance validation for every semantic artifact back to canonical nodes/source anchors;
-- fail-closed handling of unresolved applicability, dependency and semantic interpretation;
-- regression fixtures for amendments/deletions, dependencies/cross-references, evaluation and full semantic artifact provenance.
+- stronger validation and resolution of applicability/type links;
+- stronger table/formula semantic interpretation and evaluation;
+- dependency/cross-reference target resolution against the document graph;
+- complete provenance validation for every semantic artifact back to canonical nodes/source anchors;
+- fail-closed handling of unresolved amendment, dependency and semantic interpretation;
+- comprehensive regression fixtures for amendments/deletions, resolved dependencies, tables/formulas, and full semantic provenance.
 
-## 4. Priority order
+## 3. Priority order
 
 **0. Green CI → 1. Source identity → 2. Parser observations → 3. External Source Engine → 4. Reconciliation → 5. DBN structural gate → 6. Graphical verification → 7. Persistence/revision lock → 8. Independent verification/final acceptance → 9. Downstream semantics.**
 
-## 5. Definition of done
+## 4. Definition of done
 
 The generic NDI layer is complete only when:
 
@@ -170,7 +88,7 @@ The generic NDI layer is complete only when:
 10. Regression passes.
 11. Only then can the document receive protocol-level `DIGITAL_ACCEPTED`.
 
-## 6. Operational rule for future work
+## 5. Operational rule for future work
 
 After every code change:
 
