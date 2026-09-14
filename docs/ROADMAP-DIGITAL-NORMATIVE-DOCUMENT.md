@@ -160,14 +160,17 @@ Fresh execution must be separately recorded from historical benchmark evidence. 
 
 ### Phase 6 — Graphical verification — **IN PROGRESS 🔄**
 
-Implemented the fail-closed graphical-verification evidence contract and regression coverage for visually critical information. This includes explicit evidence handling for tables/merged cells, formulas, numerical values, symbols/operators, notes, numbering, headers/footers, amendments/deletions, page breaks/reading order and structurally relevant figures.
+Implemented:
+- fail-closed graphical-verification evidence contract;
+- validation of source hash, checked pages, verifier, timestamp and critical graphical categories;
+- regression coverage for missing critical categories, unresolved discrepancies and invalid source hash;
+- connection of graphical verification results to Gate C: when graphical evidence is supplied, Gate C now requires a `PASS` graphical gate and fails closed otherwise.
 
-**Remaining Phase 6 work:**
-1. connect graphical evidence to the canonical document and Gate C acceptance chain;
-2. define deterministic page/region evidence references and verification results;
-3. add DBN-specific graphical regression fixtures/evidence once the complete PDF is CI-accessible.
+**Phase 6 remaining:**
+1. define deterministic page/region evidence references and verification results;
+2. add DBN-specific graphical regression fixtures/evidence once the complete PDF is CI-accessible.
 
-### Phase 7 — Digital representation persistence and revision lock
+### Phase 7 — Digital representation persistence and revision lock — **NEXT ▶️**
 
 Implement immutable revision IDs, source-hash lock, digital-revision hash, verification archive, reproducibility manifest and explicit handoff artifact.
 
