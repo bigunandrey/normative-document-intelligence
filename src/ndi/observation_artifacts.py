@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from dataclasses import is_dataclass, fields
 from typing import Any
 
 from .canonical import CanonicalDocument
@@ -11,7 +12,7 @@ from .observations import parser_coverage
 
 
 def observation_manifest(document: CanonicalDocument) -> dict[str, Any]:
-    """Build a deterministic manifest without changing or correcting evidence."""
+    """Build a deterministic JSON-safe manifest without changing evidence."""
     observations = []
     for node in document.nodes:
         for observation in node.observations:
@@ -23,9 +24,9 @@ def observation_manifest(document: CanonicalDocument) -> dict[str, Any]:
                     "parser_version": observation.parser_version,
                     "node_type": observation.node_type.value,
                     "text": observation.text,
-                    "anchor": observation.anchor,
+                    "anchor": _json_safe(observation.anchor),
                     "confidence": observation.confidence,
-                    "attributes": observation.attributes,
+                    "attributes": _json_safe(observation.attributes),
                 }
             )
 
@@ -46,9 +47,7 @@ def observation_manifest(document: CanonicalDocument) -> dict[str, Any]:
 
 def observation_artifact_json(document: CanonicalDocument) -> str:
     """Serialize the observation manifest canonically for hashing/persistence."""
-    return json.dumps(
-        observation_manifest(document), ensure_ascii=False, indent=2, sort_keys=True, default=_json_default
-    )
+    return json.dumps(observation_manifest(document), ensure_ascii=False, indent=2, sort_keys=True)
 
 
 def observation_artifact_sha256(document: CanonicalDocument) -> str:
@@ -56,9 +55,13 @@ def observation_artifact_sha256(document: CanonicalDocument) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
-def _json_default(value: Any) -> Any:
-    if hasattr(value, "__dataclass_fields__"):
-        return {key: _json_default(getattr(value, key)) for key in value.__dataclass_fields__}
+def _json_safe(value: Any) -> Any:
+    if is_dataclass(value):
+        return {field.name: _json_safe(getattr(value, field.name)) for field in fields(value)}
+    if isinstance(value, dict):
+        return {str(key): _json_safe(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(item) for item in value]
     if hasattr(value, "value"):
         return value.value
-    raise TypeError(f"Unsupported observation artifact value: {type(value)!r}")
+    return value
