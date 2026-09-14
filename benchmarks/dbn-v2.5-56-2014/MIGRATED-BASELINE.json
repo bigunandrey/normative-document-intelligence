@@ -1,0 +1,14 @@
+{
+  "status": "MIGRATED_HISTORICAL_BASELINE",
+  "source_sha256": "fbaa2493ed510d621e8f368ec4910e5cc30d177744f22356fe3a120bbe5a5056",
+  "size_bytes": 23532218,
+  "page_count": 105,
+  "parser_benchmark_run": "34839092802",
+  "ingestion_run": "34831546595",
+  "parsers": {
+    "MarkItDown": {"version":"0.1.7","elapsed_seconds":8.898,"characters":491675,"lines":6388,"headings":0,"table_like_lines":3351,"numbered_items":16},
+    "Docling": {"version":"2.127.0","elapsed_seconds":1438.329,"characters":328429,"lines":3637,"headings":262,"table_like_lines":659,"numbered_items":98},
+    "OpenDataLoader": {"version":"2.5.8","elapsed_seconds":6.787,"characters":243067,"lines":5320,"headings":40,"table_like_lines":0,"numbered_items":14}
+  },
+  "note": "Historical evidence reused from the completed DBN ingestion benchmark. No fresh parser execution is implied."
+}
