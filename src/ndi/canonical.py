@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-"""Parser-neutral canonical structural model."""
+"""Canonical structural model for parser-neutral document recognition."""
 
 from dataclasses import asdict, dataclass, field
 from enum import StrEnum
+from typing import Any
 import hashlib
 import json
-from typing import Any
 
 
 class NodeType(StrEnum):
@@ -69,8 +69,9 @@ class CanonicalNode:
     observations: list[ParserObservation] = field(default_factory=list)
 
     def add_observation(self, observation: ParserObservation) -> None:
-        if observation.observation_id not in {o.observation_id for o in self.observations}:
-            self.observations.append(observation)
+        if observation.observation_id in {o.observation_id for o in self.observations}:
+            return
+        self.observations.append(observation)
 
 
 @dataclass
@@ -96,8 +97,8 @@ class CanonicalDocument:
 
     def children(self, parent_id: str | None) -> list[CanonicalNode]:
         return sorted(
-            (node for node in self.nodes if node.parent_id == parent_id),
-            key=lambda node: (node.order, node.node_id),
+            (n for n in self.nodes if n.parent_id == parent_id),
+            key=lambda n: (n.order, n.node_id),
         )
 
     def as_dict(self) -> dict[str, Any]:
@@ -127,4 +128,5 @@ def stable_node_id(document_id: str, node_type: NodeType, anchor: SourceAnchor |
         sort_keys=True,
         separators=(",", ":"),
     )
-    return f"node-{hashlib.sha256(payload.encode('utf-8')).hexdigest()[:16]}"
+    digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
+    return f"node-{digest}"

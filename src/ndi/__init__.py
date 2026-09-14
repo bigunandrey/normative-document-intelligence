@@ -11,17 +11,11 @@ from .canonical import (
     stable_node_id,
 )
 from .matching import compare_documents, match_nodes, normalize_text
+from .validator import Quality, RecognitionAudit, RecognitionIssue, audit_document
 
 __all__ = [
-    "BoundingBox",
-    "CanonicalDocument",
-    "CanonicalNode",
-    "NodeType",
-    "ParserObservation",
-    "SourceAnchor",
-    "stable_document_id",
-    "stable_node_id",
-    "compare_documents",
-    "match_nodes",
-    "normalize_text",
+    "BoundingBox", "CanonicalDocument", "CanonicalNode", "NodeType",
+    "ParserObservation", "SourceAnchor", "stable_document_id", "stable_node_id",
+    "compare_documents", "match_nodes", "normalize_text",
+    "Quality", "RecognitionAudit", "RecognitionIssue", "audit_document",
 ]
