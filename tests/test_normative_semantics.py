@@ -1,6 +1,6 @@
 import pytest
 
-from ndi import BoundingBox, CanonicalDocument, CanonicalNode, NodeType, SourceAnchor, build_applicability_links, build_dependency_graph, build_normative_units, build_revision_lock, build_rule_registry, validate_dependency_graph, validate_normative_units
+from ndi import BoundingBox, CanonicalDocument, CanonicalNode, NodeType, SourceAnchor, build_applicability_links, build_dependency_graph, build_normative_units, build_revision_lock, build_rule_registry, evaluate_normative_unit, evaluate_normative_units, validate_dependency_graph, validate_normative_units
 from ndi.normative_semantics import SemanticInterpretationError, decompose_normative_node
 
 SHA = "a" * 64
@@ -88,3 +88,16 @@ def test_dependency_graph_rejects_unbound_unit():
     units = build_normative_units(d, build_revision_lock(d))
     with pytest.raises(ValueError):
         build_dependency_graph(units, build_revision_lock(other))
+
+
+def test_normative_evaluation_is_deterministic_and_fail_closed():
+    d = doc("The system shall provide fire detection.")
+    lock = build_revision_lock(d)
+    unit = build_normative_units(d, lock)[0]
+    active = evaluate_normative_unit(unit)
+    assert active.result == "REQUIREMENT_ACTIVE"
+    assert evaluate_normative_unit(unit, applicability=False).result == "NOT_APPLICABLE"
+    assert evaluate_normative_unit(unit, condition=False).result == "INACTIVE"
+    assert evaluate_normative_unit(unit, applicability=None).result == "UNRESOLVED"
+    assert evaluate_normative_unit(unit, condition=None).result == "UNRESOLVED"
+    assert evaluate_normative_units((unit,), lock) == (active,)
