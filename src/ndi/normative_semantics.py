@@ -44,8 +44,6 @@ def _unit_id(document_id: str, node_id: str, ordinal: int, text: str) -> str:
 
 
 def _operator(text: str) -> tuple[str, str]:
-    # Match compound operators first so e.g. "shall not" is never also
-    # classified as the simpler "shall" operator.
     matches = [
         ("shall not", "PROHIBITION"),
         ("must not", "PROHIBITION"),
@@ -56,14 +54,34 @@ def _operator(text: str) -> tuple[str, str]:
         ("should", "RECOMMENDATION"),
         ("may", "PERMISSION"),
     ]
-    found = [(token, mode) for token, mode in matches if re.search(rf"\b{re.escape(token)}\b", text, re.IGNORECASE)]
+    found: list[tuple[str, str]] = []
+    for token, mode in matches:
+        for match in re.finditer(rf"\b{re.escape(token)}\b", text, re.IGNORECASE):
+            found.append((token, mode, match.start(), match.end()))
+
     if not found:
         raise SemanticInterpretationError("No unambiguous normative operator found")
-    modes = {mode for _, mode in found}
+
+    # A compound operator owns the words it contains.  Thus "shall not"
+    # must not also produce a separate "shall" match, and similarly for
+    # "shall be" / "must be".  Other operators elsewhere in the sentence
+    # remain visible and can still make the interpretation ambiguous.
+    compound_ranges = [
+        (start, end)
+        for token, _mode, start, end in found
+        if token in {"shall not", "must not", "shall be", "must be"}
+    ]
+    effective = [
+        item for item in found
+        if not any(start <= item[2] and item[3] <= end and item[0] not in {"shall not", "must not", "shall be", "must be"}
+                   for start, end in compound_ranges)
+    ]
+
+    modes = {mode for _token, mode, _start, _end in effective}
     if len(modes) != 1:
         raise SemanticInterpretationError("Multiple conflicting normative operators found")
-    # Prefer the longest matching operator within the same modality.
-    token, mode = max(found, key=lambda item: len(item[0]))
+
+    token, mode, _start, _end = max(effective, key=lambda item: len(item[0]))
     return token, mode
 
 
