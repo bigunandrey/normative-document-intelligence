@@ -61,39 +61,52 @@ Therefore external-source discovery and validation must be implemented **before 
 
 ## 3. New implementation phases
 
-### Phase 0 — CI and baseline recovery
+### Phase 0 — CI and baseline recovery — **COMPLETE ✅**
 
 **Goal:** never advance the architecture on a red repository.
 
-Tasks:
-1. Diagnose the current failing GitHub Actions run for `main`.
-2. Restore a green baseline.
-3. Require every subsequent implementation commit to be checked against GitHub Actions.
-4. Record the last known green commit and current regression state.
+Completed:
+1. Diagnosed the failing GitHub Actions regression on `main`.
+2. Restored the repository to a green baseline.
+3. Corrected repository-local `tools` importability and pytest path configuration.
+4. Corrected the unmatched-parser regression fixture so it tests a genuinely unmatched node rather than an anchor-matched text conflict.
+5. Confirmed GitHub Actions run `34875625916` for commit `755833052ff21d15018562800b6e6a39e36f0744` completed successfully, including `pytest -q`.
 
-Exit criterion: `main` has a confirmed successful GitHub Actions test run after the latest fixes.
+Exit criterion: **satisfied** — `main` has a confirmed successful GitHub Actions test run after the regression fixes.
 
 ---
 
-### Phase 1 — Document identity and source registry
+### Phase 1 — Document identity and source registry — **IN PROGRESS 🔄**
 
 **Goal:** establish exactly what document the user supplied before interpreting its contents.
 
-Implement:
-- document designation/title;
+Completed in current implementation:
+- immutable `DocumentIdentity` contract;
+- designation/title;
 - edition/year;
 - amendments and revisions;
 - publication/status metadata;
 - issuing/authoritative organization;
-- source URL(s) and source type;
-- source SHA-256;
+- source URL/type;
+- source SHA-256 validation;
 - source acquisition timestamp;
-- immutable source identity record;
-- source/revision compatibility checks.
+- `SourceRecord` and `SourceRegistry`;
+- `SourceCandidate` authority/revision evidence fields;
+- explicit compatibility states: `SAME_REVISION`, `DIFFERENT_REVISION`, `UNVERIFIED`;
+- fail-closed rejection of an unverified source candidate;
+- unit-test coverage for identity, SHA-256 validation, duplicate source IDs and revision compatibility.
+
+Remaining:
+- deterministic extraction of identity metadata from supplied-document observations;
+- source registry serialization/persistence artifact;
+- authoritative-source registry configuration;
+- source/revision compatibility checks integrated into the ingestion pipeline;
+- DBN identity fixture and end-to-end identity test;
+- CI verification of the Phase 1 implementation.
 
 Fail-closed rule: a source candidate that cannot be proven to correspond to the supplied document revision is not an authoritative match.
 
-Exit criterion: the engine can distinguish **same document / same revision**, **same document / different revision**, and **unverified candidate**.
+Exit criterion: the engine can distinguish **same document / same revision**, **same document / different revision**, and **unverified candidate** through the production ingestion path, with the decision preserved as evidence.
 
 ---
 
