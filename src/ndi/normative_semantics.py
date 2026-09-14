@@ -215,7 +215,7 @@ def validate_applicability_links(links: tuple[ApplicabilityLink, ...], units: tu
         if link.target not in unit.applicability:
             issues.append(f"Applicability link {link.link_id} target is absent from unit {link.unit_id}")
         if link.source_node_id != unit.node_id or link.anchor_page != unit.anchor_page:
-            issues.append(f"Applicability link {link.link_id} source anchor does not match unit {link.unit_id}")
+            issues.append(f"Applicability link {link.link_id} source anchor does not match unit {unit.unit_id}")
         if document is not None:
             node = nodes_by_id.get(link.source_node_id)
             if node is None:
@@ -307,17 +307,54 @@ def build_dependency_graph(units: tuple[NormativeUnit, ...], lock: RevisionLock)
     return SemanticDependencyGraph(lock.document_id, lock.source_sha256, lock.digital_revision, tuple(dependencies))
 
 
-def validate_dependency_graph(graph: SemanticDependencyGraph, lock: RevisionLock) -> tuple[bool, list[str]]:
+def _resolved_dependency_targets(document: CanonicalDocument, known_targets: Iterable[str] | Mapping[str, Any] | None) -> set[str]:
+    targets = {node.node_id for node in document.nodes}
+    if known_targets is not None:
+        targets.update(known_targets.keys() if isinstance(known_targets, Mapping) else known_targets)
+    for node in document.nodes:
+        for key in ("reference_id", "clause_id", "section_id", "identifier", "designation"):
+            value = node.attributes.get(key)
+            if value is not None and str(value).strip():
+                targets.add(str(value).strip())
+    return targets
+
+
+def validate_dependency_graph(graph: SemanticDependencyGraph, lock: RevisionLock, *, units: tuple[NormativeUnit, ...] | None = None, document: CanonicalDocument | None = None, known_targets: Iterable[str] | Mapping[str, Any] | None = None) -> tuple[bool, list[str]]:
     issues: list[str] = []
     seen: set[str] = set()
+    units_by_id = {unit.unit_id: unit for unit in units} if units is not None else {}
+    nodes = {node.node_id: node for node in document.nodes} if document is not None else {}
+    resolved_targets = _resolved_dependency_targets(document, known_targets) if document is not None else (set(known_targets.keys()) if isinstance(known_targets, Mapping) else set(known_targets) if known_targets is not None else None)
     for dep in graph.dependencies:
         if dep.dependency_id in seen:
             issues.append(f"Duplicate dependency: {dep.dependency_id}")
         seen.add(dep.dependency_id)
         if dep.document_id != lock.document_id or dep.source_sha256 != lock.source_sha256 or dep.digital_revision != lock.digital_revision:
             issues.append(f"Dependency {dep.dependency_id} is not bound to the locked revision")
-        if not dep.source_unit_id or not dep.target or not dep.relation or not dep.evidence_text:
+        if not dep.source_unit_id or not dep.target or not dep.relation or not dep.source_node_id or not dep.evidence_text:
             issues.append(f"Dependency {dep.dependency_id} is incomplete")
+            continue
+        if dep.relation != "depends_on":
+            issues.append(f"Unsupported dependency relation: {dep.relation}")
+        if units is not None:
+            unit = units_by_id.get(dep.source_unit_id)
+            if unit is None:
+                issues.append(f"Dependency {dep.dependency_id} references unknown source unit {dep.source_unit_id}")
+            else:
+                if dep.source_node_id != unit.node_id or dep.anchor_page != unit.anchor_page:
+                    issues.append(f"Dependency {dep.dependency_id} source anchor does not match source unit")
+                if dep.target not in unit.dependency_targets:
+                    issues.append(f"Dependency {dep.dependency_id} target is absent from source unit")
+                if dep.evidence_text != unit.source_text:
+                    issues.append(f"Dependency {dep.dependency_id} evidence does not match source unit")
+        if document is not None:
+            source_node = nodes.get(dep.source_node_id)
+            if source_node is None:
+                issues.append(f"Dependency {dep.dependency_id} references unknown source node {dep.source_node_id}")
+            elif (source_node.anchor.page if source_node.anchor else None) != dep.anchor_page:
+                issues.append(f"Dependency {dep.dependency_id} has an invalid source page")
+        if resolved_targets is not None and dep.target not in resolved_targets:
+            issues.append(f"Dependency target is unresolved: {dep.target}")
     return not issues, issues
 
 
@@ -370,4 +407,8 @@ def validate_normative_units(units: tuple[NormativeUnit, ...], lock: RevisionLoc
             issues.append(f"Unit {unit.unit_id} has an empty applicability target")
         if len(set(unit.applicability)) != len(unit.applicability):
             issues.append(f"Unit {unit.unit_id} has duplicate applicability targets")
+        if any(not target for target in unit.dependency_targets):
+            issues.append(f"Unit {unit.unit_id} has an empty dependency target")
+        if len(set(unit.dependency_targets)) != len(unit.dependency_targets):
+            issues.append(f"Unit {unit.unit_id} has duplicate dependency targets")
     return not issues, issues
