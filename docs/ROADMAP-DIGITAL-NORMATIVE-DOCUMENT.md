@@ -151,18 +151,20 @@ Current baseline:
 - adapter capability manifest is validated before execution;
 - regression tests cover parser registration, identity, provenance and page-boundary preservation;
 - parent references are now explicitly separated into local structural references and global input references, preventing ordinal-offset corruption across multiple top-level records;
-- regression coverage includes multiple structural records plus explicit global parent references.
+- regression coverage includes multiple structural records plus explicit global parent references;
+- deterministic source-bound observation manifests are JSON-safe, canonicalized and SHA-256 addressable;
+- `ingest_parser_outputs()` now provides one deterministic API path from a complete configured parser-output set to source-bound observation artifacts;
+- ingestion regression coverage verifies complete parser coverage, source binding, determinism and fail-closed behavior.
 
 Remaining Phase 2 work:
 - audit and harden each adapter against the full canonical observation contract;
 - complete structural recognition for tables/rows/cells, formulas, headers/footers, footnotes and figures;
 - preserve reading order and geometry consistently across adapters;
 - execute the registered DBN fixture through the multi-parser path;
-- produce provenance-complete observation artifacts;
 - add structural regression tests for the configured parser set.
 
 CI evidence:
-- GitHub Actions run `34878730010` for the current `main` head — **SUCCESS**;
+- GitHub Actions run `34880086115` (#98) for commit `7b384719b46353e5501fa754fbd0e86921e03274` — **SUCCESS**;
 - `pytest -q` step — **SUCCESS**.
 
 The roadmap remains in Phase 2 until the DBN fixture can be executed through the complete registered parser path with provenance-complete observations.
