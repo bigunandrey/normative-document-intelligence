@@ -2,29 +2,17 @@
 
 ## Fixture identity
 
-The benchmark fixture is the DBN V.2.5-56:2014 PDF with Changes 1 and 2.
+The registered fixture is the DBN V.2.5-56:2014 PDF with Changes 1 and 2.
 
-Expected source identity from the established baseline:
-
-- SHA-256: `fbaa2493ed510d621e8f368ec4910e5cc30d177744f22356fe3a120bbe5a5056`
+- SHA-256: `fbaa2493ed510d621e8f368ec4910e5cc30d177744f22356fe3a120bbe5a505`
 - Size: `23,532,218` bytes
 - Pages: `105`
 
-The source PDF is not committed to this public repository. A benchmark run must verify the SHA-256 before accepting results.
+The source PDF is not committed to this public repository. The identity is verified by provenance/hash when the fixture is supplied to a runner.
 
-## Execution
+## Migrated benchmark evidence
 
-From the repository root:
-
-```text
-python tools/dbn_benchmark.py path/to/DBN.pdf -o benchmarks/dbn-v2.5-56-2014/result.json
-```
-
-The runner records source provenance and MarkItDown extraction metrics. Future parser adapters must add their own observation block without replacing existing parser evidence.
-
-## Established baseline (old repository)
-
-These values are retained as a migration reference, not as a new-repository run:
+This repository inherits the completed benchmark evidence from the Fire Protection Engine document-ingestion work. The PDF does **not** need to be executed again merely to populate NDI: the historical evidence is preserved in `MIGRATED-BASELINE.json` with its source workflow run IDs.
 
 | Parser | Version | Time (s) | Characters | Lines | Headings | Table-like lines | Numbered items |
 |---|---:|---:|---:|---:|---:|---:|---:|
@@ -32,4 +20,12 @@ These values are retained as a migration reference, not as a new-repository run:
 | Docling | 2.127.0 | 1438.329 | 328,429 | 3,637 | 262 | 659 | 98 |
 | OpenDataLoader | 2.5.8 | 6.787 | 243,067 | 5,320 | 40 | 0 | 14 |
 
-These numbers must not be presented as benchmark results produced by this repository until the fixture has been run here.
+These values are **historical migrated evidence**, not measurements produced by a fresh NDI execution. They are retained as the established baseline for the next structural-recognition stage.
+
+## NDI runner
+
+The repository also contains `tools/dbn_benchmark.py`. It verifies fixture identity and can produce a new MarkItDown extraction report when a licensed copy of the fixture is supplied. A newly generated report must not overwrite the migrated historical baseline.
+
+## Recognition boundary
+
+The benchmark is concerned with document structure and evidence: page boundaries, reading order, headings/sections, paragraphs and lists, tables/cells, formulas, headers/footers, provenance, and parser disagreement. Normative semantics and engineering calculations remain outside NDI.
