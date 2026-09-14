@@ -82,12 +82,17 @@ class SourceCandidate:
     revision_verified: bool = False
     evidence: tuple[str, ...] = ()
 
-    def compatibility_with(self, supplied: SourceRecord) -> Compatibility:
+    def compatibility_with(
+        self,
+        supplied: DocumentIdentity | SourceRecord,
+    ) -> Compatibility:
+        """Compare a candidate with supplied document identity or source record."""
         if not self.authority_verified or not self.revision_verified:
             return Compatibility.UNVERIFIED
-        if self.identity.normalized_key() != supplied.identity.normalized_key():
+        supplied_identity = supplied.identity if isinstance(supplied, SourceRecord) else supplied
+        if self.identity.normalized_key() != supplied_identity.normalized_key():
             return Compatibility.DIFFERENT_REVISION
-        if self.sha256 and self.sha256 != supplied.sha256:
+        if isinstance(supplied, SourceRecord) and self.sha256 and self.sha256 != supplied.sha256:
             return Compatibility.DIFFERENT_REVISION
         return Compatibility.SAME_REVISION
 
