@@ -7,8 +7,10 @@ from ndi.external_comparison import compare_observation_set
 from ndi.external_pipeline import run_external_cross_check
 from ndi.external_retrieval import retrieve_validated, verify_retrieved_bytes
 from ndi.external_parsing import aggregate_external_observations, parse_retrieved_external
+from ndi.integrated_reconciliation import reconcile_with_external
 from ndi.source_registry import Compatibility
-from ndi.external_sources import ExternalDocument
+from ndi.external_sources import DiscrepancyEvidence, DiscrepancyKind, ExternalDocument
+from ndi.external_comparison import ExternalComparisonResult
 
 
 IDENTITY = DocumentIdentity("DBN V.2.5-56:2014", edition_year=2014, amendments=("1", "2"))
@@ -171,3 +173,25 @@ def test_external_pipeline_is_fail_closed_on_parser_disagreement():
             (Provider(b"pdf"),),
             (_parser_with_node("a", "same"), _parser_with_node("b", "different")),
         )
+
+
+def test_integrated_reconciliation_accepts_clean_external_evidence():
+    supplied = CanonicalDocument("external-test", "Official", source(b"pdf").candidate.sha256, 1, [], {"supplied": "1.0"})
+    result = run_external_cross_check(supplied, IDENTITY, (Provider(b"pdf"),), (Parser(),))[0].comparison
+    report = reconcile_with_external(supplied, (result,))
+    assert report.accepted
+    assert not report.blocked
+
+
+def test_integrated_reconciliation_blocks_external_discrepancy():
+    supplied = CanonicalDocument("external-test", "Official", source(b"pdf").candidate.sha256, 1, [], {"supplied": "1.0"})
+    discrepancy = DiscrepancyEvidence(
+        DiscrepancyKind.TEXT_MISMATCH,
+        "external mismatch",
+        ("official",),
+        evidence=("validated_same_revision_source",),
+    )
+    comparison = ExternalComparisonResult(source(b"pdf"), (discrepancy,))
+    report = reconcile_with_external(supplied, (comparison,))
+    assert report.blocked
+    assert not report.accepted
