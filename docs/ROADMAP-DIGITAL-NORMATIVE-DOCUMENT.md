@@ -131,17 +131,24 @@ Latest verified CI run: `34886851497` (#174) — **SUCCESS**, `pytest -q` — **
 
 Goal: transform the accepted canonical document into deterministic, source-bound normative semantics without altering the locked digital representation.
 
-Required implementation:
+**Completed:**
 - atomic normative-unit decomposition;
-- exact normative operators (`shall`, `should`, `may`, prohibitions, conditions and exceptions);
+- exact normative operators for requirements, prohibitions, recommendations and permissions;
+- preservation of conditions and exceptions;
+- source/document/revision-bound semantic units with canonical IDs and source text;
 - applicability/type links;
-- table/formula rule registries;
+- table/formula rule registry primitives;
+- fail-closed ambiguity handling for conflicting normative operators;
+- regression coverage for the implemented decomposition/operator contract.
+
+**Remaining:**
 - amendment/deletion semantics;
 - dependency and cross-reference graph;
 - deterministic semantic execution/evaluation model;
-- provenance for every semantic unit back to canonical nodes and source anchors;
-- fail-closed handling of ambiguous or unresolved semantic interpretation;
-- regression fixtures for semantic units, operators, tables, formulas, conditions and dependencies.
+- stronger validation of applicability/type links and rule registries;
+- provenance validation for every semantic artifact back to canonical nodes/source anchors;
+- fail-closed handling of unresolved applicability, dependency and semantic interpretation;
+- regression fixtures for amendments/deletions, dependencies/cross-references, evaluation and full semantic artifact provenance.
 
 ## 4. Priority order
 
