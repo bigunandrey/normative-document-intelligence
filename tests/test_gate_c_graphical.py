@@ -1,11 +1,30 @@
-from ndi import CanonicalDocument, GraphicalVerificationRecord, gate_c_structural_acceptance, validate_graphical_verification
+from ndi import (
+    BoundingBox,
+    CanonicalDocument,
+    CanonicalNode,
+    GraphicalVerificationRecord,
+    NodeType,
+    ParserObservation,
+    SourceAnchor,
+    gate_c_structural_acceptance,
+    validate_graphical_verification,
+)
 from ndi.reconciliation import ReconciliationDecision, ReconciliationReport
 
 SHA = "a" * 64
 
 
 def document():
-    return CanonicalDocument("doc", "source.pdf", SHA, 3)
+    anchor = SourceAnchor(page=1, bbox=BoundingBox(0, 0, 100, 20), char_start=0, char_end=4)
+    node = CanonicalNode(
+        "n1",
+        NodeType.PARAGRAPH,
+        text="text",
+        order=0,
+        anchor=anchor,
+        observations=[ParserObservation("test", "1.0", "o1", NodeType.PARAGRAPH, "text", anchor, 0.99)],
+    )
+    return CanonicalDocument("doc", "source.pdf", SHA, 3, [node])
 
 
 def report():
