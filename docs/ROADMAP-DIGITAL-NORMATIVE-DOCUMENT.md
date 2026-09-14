@@ -149,7 +149,9 @@ Current baseline:
 - `adapt_registered()` provides a common execution contract;
 - `adapt_all()` provides a single deterministic multi-parser execution path and fails closed when a configured parser output is missing or unknown;
 - adapter capability manifest is validated before execution;
-- regression tests cover parser registration, identity, provenance and page-boundary preservation.
+- regression tests cover parser registration, identity, provenance and page-boundary preservation;
+- parent references are now explicitly separated into local structural references and global input references, preventing ordinal-offset corruption across multiple top-level records;
+- regression coverage includes multiple structural records plus explicit global parent references.
 
 Remaining Phase 2 work:
 - audit and harden each adapter against the full canonical observation contract;
@@ -159,7 +161,11 @@ Remaining Phase 2 work:
 - produce provenance-complete observation artifacts;
 - add structural regression tests for the configured parser set.
 
-**CI note:** commits introducing the registered execution path have triggered GitHub Actions; the roadmap is not to be advanced to the next phase until the current `main` head has a confirmed successful run.
+CI evidence:
+- GitHub Actions run `34878730010` for the current `main` head — **SUCCESS**;
+- `pytest -q` step — **SUCCESS**.
+
+The roadmap remains in Phase 2 until the DBN fixture can be executed through the complete registered parser path with provenance-complete observations.
 
 Exit criterion: the registered DBN fixture can produce parser observations from the configured parser set through one reproducible API/CLI path.
 
