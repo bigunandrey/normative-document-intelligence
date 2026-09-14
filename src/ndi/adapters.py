@@ -77,13 +77,48 @@ def new_document(source_name: str, source_sha256: str, page_count: int | None, p
                              source_sha256=source_sha256, page_count=page_count, parser_versions={parser: version})
 
 
+def _expand_structural_record(item: Mapping[str, Any]) -> list[Mapping[str, Any]]:
+    """Expand common nested table/list records while retaining the parser payload verbatim."""
+    result: list[Mapping[str, Any]] = [item]
+    typ = _node_type(item.get("type", item.get("element_type", item.get("kind"))))
+    if typ == NodeType.TABLE:
+        rows = item.get("rows", item.get("children", ()))
+        if isinstance(rows, (list, tuple)):
+            for row in rows:
+                if not isinstance(row, Mapping):
+                    row = {"text": _text(row)}
+                row_data = dict(row)
+                row_data.setdefault("type", NodeType.TABLE_ROW.value)
+                row_data.setdefault("page", _page(item))
+                result.append(row_data)
+                cells = row_data.get("cells", row_data.get("children", ()))
+                if isinstance(cells, (list, tuple)):
+                    for cell in cells:
+                        cell_data = dict(cell) if isinstance(cell, Mapping) else {"text": _text(cell)}
+                        cell_data.setdefault("type", NodeType.TABLE_CELL.value)
+                        cell_data.setdefault("page", _page(row_data))
+                        result.append(cell_data)
+    elif typ == NodeType.LIST:
+        items = item.get("items", item.get("children", ()))
+        if isinstance(items, (list, tuple)):
+            for child in items:
+                child_data = dict(child) if isinstance(child, Mapping) else {"text": _text(child)}
+                child_data.setdefault("type", NodeType.LIST_ITEM.value)
+                child_data.setdefault("page", _page(item))
+                result.append(child_data)
+    return result
+
+
 def from_records(records: list[Mapping[str, Any]], *, source_name: str, source_sha256: str,
                  page_count: int | None, parser: str, version: str) -> CanonicalDocument:
     """Map normalized parser records to canonical evidence without inference."""
     document = new_document(source_name, source_sha256, page_count, parser, version)
+    expanded: list[Mapping[str, Any]] = []
+    for item in records:
+        expanded.extend(_expand_structural_record(item))
     node_by_ordinal: dict[int, CanonicalNode] = {}
     pending_parent: dict[int, int] = {}
-    for ordinal, item in enumerate(records):
+    for ordinal, item in enumerate(expanded):
         node = add_observation(document, RawObservation(parser, version,
             _node_type(item.get("type", item.get("element_type", item.get("kind")))),
             _text(item.get("text", item.get("content", item.get("value")))), _anchor(item),
