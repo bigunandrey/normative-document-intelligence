@@ -25,7 +25,7 @@ The generic NDI engine has progressed substantially beyond the former structural
 4. Cross-parser matching, reconciliation and retained discrepancies.
 5. Fail-closed structural verification gates A–C.
 6. External authoritative-source discovery, retrieval, integrity verification and multi-parser external comparison.
-7. Digital representation persistence and immutable revision lock.
+7. Digital representation persistence, self-contained package creation/replay and immutable revision lock.
 8. Independent AI verification records and final acceptance contract.
 9. Atomic normative semantic decomposition with exact normative operators.
 10. Conditions, exceptions and applicability/type links.
@@ -36,7 +36,7 @@ The generic NDI engine has progressed substantially beyond the former structural
 15. Complete semantic provenance validation back to canonical nodes/source evidence.
 16. Fail-closed semantic acceptance validation.
 
-The project is therefore no longer at the stage where the next useful step is to run one benchmark PDF. The next priority is to **finish the entire generic PDF → Digital Copy product/workflow**, including the user interface, all supporting artifacts, lifecycle controls and end-to-end contracts. Only after that should real normative documents be used as a validation suite.
+The project is therefore no longer at the stage where the next useful step is to run one benchmark PDF. The next priority is to **finish the entire generic PDF → Digital Copy product/workflow**, including the production orchestration service, user interface, all supporting artifacts, lifecycle controls and end-to-end contracts. Only after that should real normative documents be used as a validation suite.
 
 ## 3. Requirement-by-requirement cross-check
 
@@ -51,11 +51,11 @@ The project is therefore no longer at the stage where the next useful step is to
 | §3.5 | Fail-closed on missing evidence | **COMPLETE** | Structural and semantic fail-closed validators implemented. |
 | §3.6 | AI inference ≠ normative requirement | **COMPLETE** | Semantic acceptance/provenance chain requires source-bound evidence. |
 | §4 | Two master normative-register files | **DOWNSTREAM BY DESIGN** | Master SPZ register is domain/project-level. Generic NDI defines the evidence needed to update it. |
-| §5 | Isolated per-document `reference-data/<DOCUMENT_ID>` package | **PARTIAL** | Benchmark/reference artifacts exist; generic production package lifecycle and user-facing creation flow remain open. |
+| §5 | Isolated per-document `reference-data/<DOCUMENT_ID>` package | **PARTIAL** | Generic self-contained package/replay primitives now exist; canonical per-document lifecycle and user-facing creation flow remain open. |
 | §6 | AI-Revisions archive | **PARTIAL** | Immutable AI verification/revision primitives exist; complete `Rev_NNN` operational archive workflow remains open. |
 | §7 | Mandatory pre-work protocol reading/state inspection | **PARTIAL** | Protocol exists and defines the rule; runtime enforcement/checklist is not yet implemented. |
 | §8 | Source identification + edition/amendments | **COMPLETE FOR CORE IDENTITY** | `DocumentIdentity`, source registry and revision binding implemented; legal/current-edition discovery remains workflow/provider dependent. |
-| §9 | Capture immutable primary source | **PARTIAL** | Hash/integrity binding exists; generic source archival/storage lifecycle is not yet a complete NDI product feature. |
+| §9 | Capture immutable primary source | **COMPLETE FOR PACKAGE CORE** | Source SHA-256 binding plus package-local immutable source copy and verification are implemented; application-level intake lifecycle remains open. |
 | §10 | Full extraction + extraction log | **PARTIAL** | Multi-parser observation/adapters exist; one production orchestration and persistent extraction-log artifact remain open. |
 | §11 | Atomic normative decomposition | **COMPLETE FOR GENERIC SEMANTIC CONTRACT** | `NormativeUnit` decomposition and validation are implemented. Real-document coverage remains validation work. |
 | §12 | Semantic normalization fields | **COMPLETE FOR GENERIC SEMANTIC CONTRACT** | Subject/predicate/condition/exception/modality and related source-bound fields implemented. |
@@ -72,7 +72,7 @@ The project is therefore no longer at the stage where the next useful step is to
 | §23 | Source hash / digital revision lock | **COMPLETE FOR GENERIC CONTRACT** | Immutable revision lock, deterministic revision ID and reproducibility manifest implemented. |
 | §24 | Final `DIGITAL_ACCEPTED` acceptance chain | **PARTIAL** | Generic final acceptance primitives exist; full production orchestration across all evidence gates is open. |
 | §25 | Full digitalization status vocabulary | **PARTIAL** | Gate statuses exist; complete user-facing document lifecycle/status model remains open. |
-| §26 | Full reproducibility through preserved artifacts | **PARTIAL** | Revision lock and evidence hashes exist; complete real-document package/replay workflow remains open. |
+| §26 | Full reproducibility through preserved artifacts | **COMPLETE FOR GENERIC PACKAGE CONTRACT / PRODUCT INTEGRATION OPEN** | Package creation persists source/job/manifest, verifies artifact hashes and can replay with package-local paths after original locations are removed. Full pipeline artifact population remains open. |
 | §27 | AI must execute to factual result and leave explicit handoff if blocked | **PARTIAL** | Fail-closed behavior is implemented in core validators; runtime operating-policy enforcement and handoff workflow remain open. |
 
 ## 4. What is deliberately NOT the next priority
@@ -150,21 +150,29 @@ The corpus should be selected to exercise different failure modes. DBN is one ac
 
 ## 7. Current open work — ordered
 
-### P0 — Finish generic Digital Copy product
+### P0 — Production Digital Copy orchestration **CURRENT STEP**
 
-- Complete end-to-end orchestration from PDF intake to final acceptance package.
-- Define the user-facing Digital Copy workspace and lifecycle.
-- Expose all gate states, discrepancies, evidence and unresolved blockers.
-- Add persistent extraction log and complete per-document package generation.
-- Complete graphical verification workflow and evidence model.
-- Complete operational AI-Revisions/handoff workflow.
-- Complete replay/reproducibility workflow.
+- Complete deterministic orchestration from PDF intake to final acceptance package.
+- Persist a complete job/package after each material stage.
+- Integrate existing identity, extraction, reconciliation, external-source, canonical, semantic, graphical, revision-lock, verification and regression contracts.
+- Ensure all failures become explicit blockers and no later stage can bypass them.
+
+### P0 — Generic Digital Copy UI
+
+- Define and implement the user-facing Digital Copy workspace.
+- Expose gate states, discrepancies, evidence and unresolved blockers.
+
+### P0 — Graphical verification
+
+- Implement source-page/region evidence capture and workflow.
+
+### P1 — Operational evidence/revision/handoff
+
+- Complete extraction log, verification archive, `Rev_NNN` archive, handoff and export lifecycle.
 
 ### P1 — Generic regression / fixtures
 
-- Build a synthetic fixture suite covering tables, formulas, amendments, dependencies, ambiguity and fail-closed cases.
-- Add end-to-end tests across the complete generic pipeline.
-- Verify that UI-visible status cannot bypass acceptance gates.
+- Build controlled fixtures and E2E tests across the complete generic pipeline.
 
 ### P2 — Real normative corpus validation
 
