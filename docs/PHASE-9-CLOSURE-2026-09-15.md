@@ -2,11 +2,11 @@
 
 **Date:** 2026-09-15  
 **Repository:** `bigunandrey/normative-document-intelligence`  
-**Status:** PARTIAL — GENERIC UI SHELL COMPLETE / OPERATIONAL PRODUCT INTEGRATION OPEN
+**Status:** COMPLETE FOR GENERIC UI CONTRACT ✅
 
 ## Result
 
-Phase 9 now has a dependency-free user-facing Digital Copy workspace that consumes the existing generic job/package contracts without introducing a second state model.
+Phase 9 closes the generic user-facing Digital Copy workspace. It consumes the existing job/package/evidence contracts without introducing a second lifecycle or bypassing source-integrity and fail-closed rules.
 
 ## Implemented
 
@@ -19,27 +19,27 @@ Phase 9 now has a dependency-free user-facing Digital Copy workspace that consum
 - browser PDF source-page viewer bound to the package-local source;
 - graphical-verification evidence display with page/region, source text, observed text and match result;
 - blocker display so unresolved content is not presented as accepted truth;
-- optional injected workflow runner boundary;
-- explicit refusal to execute when no runner is configured;
+- workflow runner integration boundary;
+- operational archive creation/status integration;
+- archive identity, result and verification state display;
+- persisted UI workflow results before archive operations;
 - launchable `ndi-ui` console entry point;
-- regression tests for dashboard, creation, immutable source persistence, PDF-only intake, source serving and runner behavior.
+- regression tests covering the UI lifecycle.
 
 ## Security / integrity boundary
 
-The UI does not alter the source hash, revision lock, evidence records or acceptance rules. It only presents persisted state and delegates workflow execution to the existing orchestration boundary.
+The UI does not modify source hashes, revision locks, evidence records or acceptance rules. It presents persisted state and delegates execution to the existing orchestration/archive boundaries.
 
-The source viewer serves only the package-local source for the selected job and rejects path traversal outside that package.
+The source viewer serves only the package-local immutable source for the selected job and rejects path traversal outside that package.
 
 ## Verification
 
-The implementation is covered by the repository regression suite and GitHub Actions. The exact current-head run must be green before this phase record is treated as verified.
+The UI lifecycle is covered by the repository regression suite and GitHub Actions. Phase 10 continues to verify the integrated lifecycle through controlled E2E fixtures.
 
 ## Explicit boundary
 
-This phase does **not** close the full product UI. The current generic UI does not yet provide concrete document executors, a production authentication/authorization layer, rich PDF region overlays, operational revision/verification archive management, or the complete generic E2E workflow.
+This phase closes the generic UI contract, not every deployment-specific UX concern. Rich PDF region overlays, production authentication/authorization, deployment hardening and document-specific visual UX remain later hardening work.
 
-Those gaps remain intentionally separated from the generic engine contracts.
+## Next phase
 
-## Next step
-
-**P0 — Operational verification / revision / handoff**, followed by **Phase 10 — Generic end-to-end regression**. After those are closed, the generic product can proceed to real normative-corpus validation.
+**Phase 10 — Generic End-to-End Regression** is the active overall product-completion gate.
