@@ -11,7 +11,7 @@ from uuid import uuid4
 from wsgiref.simple_server import make_server
 
 from .digital_copy_package import persist_package
-from .digital_copy_workflow import DigitalCopyJob, DigitalCopySource, DigitalCopyStatus, load_job, new_job
+from .digital_copy_workflow import DigitalCopyJob, DigitalCopySource, DigitalCopyStatus, load_job, new_job, persist_job_file
 
 Runner = Callable[[DigitalCopyJob], DigitalCopyJob]
 Archiver = Callable[[DigitalCopyJob], DigitalCopyJob]
@@ -223,7 +223,7 @@ Revision <code>{escape(job.revision_id or "not locked")}</code><br>SHA-256 <code
                 job.source = DigitalCopySource(str((root / "source" / filename).resolve()), filename, job.source.sha256)
                 job.artifact_root = str(root)
                 job.metadata["ui_created"] = True
-                (root / "job.json").write_text(json.dumps(job.as_dict(), ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+                persist_job_file(job, root / "job.json")
             finally:
                 incoming.unlink(missing_ok=True)
                 incoming_dir.rmdir()
@@ -236,6 +236,7 @@ Revision <code>{escape(job.revision_id or "not locked")}</code><br>SHA-256 <code
                 return self._respond(start_response, "409 Conflict", _json({"error": "runner_not_configured"}), "application/json")
             try:
                 result = self.runner(job)
+                persist_job_file(result, self.workspace_root / result.job_id / "job.json")
             except Exception as exc:  # noqa: BLE001
                 return self._respond(start_response, "409 Conflict", _json({"error": type(exc).__name__, "detail": str(exc)}), "application/json")
             return self._respond(start_response, "200 OK", _json(_job_payload(result)), "application/json")
@@ -249,6 +250,7 @@ Revision <code>{escape(job.revision_id or "not locked")}</code><br>SHA-256 <code
                 return self._respond(start_response, "409 Conflict", _json({"error": "job_not_accepted"}), "application/json")
             try:
                 result = self.archiver(job)
+                persist_job_file(result, self.workspace_root / result.job_id / "job.json")
             except Exception as exc:  # noqa: BLE001
                 return self._respond(start_response, "409 Conflict", _json({"error": type(exc).__name__, "detail": str(exc)}), "application/json")
             return self._respond(start_response, "200 OK", _json(_job_payload(result)), "application/json")
