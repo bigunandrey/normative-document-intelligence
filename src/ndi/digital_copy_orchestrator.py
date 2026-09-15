@@ -13,6 +13,7 @@ import json
 from pathlib import Path
 from typing import Callable, Mapping
 
+from .ai_verification import AIVerificationRecord
 from .digital_copy_package import persist_package, write_artifact
 from .digital_copy_stage_contracts import StageEvidence, StageEvidenceKind, apply_bindings
 from .digital_copy_workflow import (
@@ -22,6 +23,8 @@ from .digital_copy_workflow import (
     accept_job,
     persist_job_file,
 )
+from .operational_archive import RevisionArchiveRecord, persist_revision_archive
+from .revision_lock import RevisionLock
 
 
 class OrchestrationStage(StrEnum):
@@ -138,6 +141,7 @@ class DigitalCopyOrchestrator:
                 "stage": job.stage.value,
                 "accepted": job.accepted,
                 "blockers": list(job.blockers),
+                "archive": job.metadata.get("operational_archive"),
                 "artifacts": dict(sorted(job.artifacts.items())),
                 "next_system": "downstream-normative-domain",
             },
@@ -192,6 +196,58 @@ class DigitalCopyOrchestrator:
 
         self._record_evidence(job, stage, evidence)
         self._persist(job)
+
+    def archive_revision(
+        self,
+        job: DigitalCopyJob,
+        lock: RevisionLock,
+        verification_records: tuple[AIVerificationRecord, ...],
+        *,
+        lock_root: Path,
+        archive_root: Path,
+        created_at: str,
+        result: str = "PASS",
+    ) -> RevisionArchiveRecord:
+        """Create the immutable Rev_NNN archive as an explicit lifecycle operation."""
+        if not job.accepted:
+            raise RuntimeError("Only a DIGITAL_ACCEPTED job can be archived")
+        if not job.revision_id or job.revision_id != lock.revision_id:
+            raise ValueError("Archive revision lock does not match the Digital Copy job")
+        if job.document_id and job.document_id != lock.document_id:
+            raise ValueError("Archive revision lock does not match the Digital Copy document")
+        if job.source.sha256 != lock.source_sha256:
+            raise ValueError("Archive revision lock does not match the Digital Copy source")
+        record = persist_revision_archive(
+            lock,
+            lock_root,
+            archive_root,
+            verification_records=verification_records,
+            result=result,
+            created_at=created_at,
+            handoff={
+                "job_id": job.job_id,
+                "document_id": job.document_id,
+                "revision_id": job.revision_id,
+                "source_sha256": job.source.sha256,
+                "status": job.status.value,
+            },
+        )
+        archive_record_path = archive_root.resolve() / record.archive_id / "archive-record.json"
+        job.metadata["operational_archive"] = {
+            "archive_id": record.archive_id,
+            "result": record.result,
+            "revision_id": record.revision_id,
+            "document_id": record.document_id,
+            "source_sha256": record.source_sha256,
+            "manifest_sha256": record.manifest_sha256,
+            "verification_hashes": list(record.verification_hashes),
+            "created_at": record.created_at,
+            "verified": True,
+        }
+        job.artifacts["operational_archive"] = str(archive_record_path)
+        self._persist_handoff(job)
+        self._persist(job)
+        return record
 
     def run(self, job: DigitalCopyJob) -> DigitalCopyJob:
         """Run all configured stages and fail closed on the first missing/failed stage."""
