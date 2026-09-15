@@ -7,7 +7,7 @@ import pytest
 
 from ndi.ai_verification import AIVerificationRecord, build_evidence_hash
 from ndi.digital_copy_orchestrator import DigitalCopyOrchestrator, OrchestrationStage
-from ndi.digital_copy_package import replay_package
+from ndi.digital_copy_package import replay_package, verify_package
 from ndi.digital_copy_stage_contracts import StageEvidence, StageEvidenceKind
 from ndi.digital_copy_workflow import DigitalCopySource, DigitalCopyStatus, new_job
 from ndi.operational_archive import verify_revision_archive
@@ -62,13 +62,7 @@ def _verification(lock: RevisionLock, verifier_id: str, basis: str) -> AIVerific
     return AIVerificationRecord(evidence_hash=build_evidence_hash(seed), **fields)
 
 
-def test_generic_e2e_accept_archive_and_replay(tmp_path: Path):
-    job = _job(tmp_path)
-    package = tmp_path / "package"
-    orchestrator = DigitalCopyOrchestrator(package, _executors())
-    result = orchestrator.run(job)
-    assert result.status == DigitalCopyStatus.DIGITAL_ACCEPTED
-
+def _locked_revision(tmp_path: Path, result):
     lock = RevisionLock(
         revision_id=result.revision_id,
         document_id=result.document_id,
@@ -81,6 +75,17 @@ def test_generic_e2e_accept_archive_and_replay(tmp_path: Path):
     lock_dir.mkdir(parents=True)
     (lock_dir / "digital-representation.json").write_text("{}\n", encoding="utf-8")
     (lock_dir / "reproducibility-manifest.json").write_text(lock.manifest_json(), encoding="utf-8")
+    return lock
+
+
+def test_generic_e2e_accept_archive_and_replay(tmp_path: Path):
+    job = _job(tmp_path)
+    package = tmp_path / "package"
+    orchestrator = DigitalCopyOrchestrator(package, _executors())
+    result = orchestrator.run(job)
+    assert result.status == DigitalCopyStatus.DIGITAL_ACCEPTED
+
+    lock = _locked_revision(tmp_path, result)
     records = (
         _verification(lock, "verifier-a", "independent-model"),
         _verification(lock, "verifier-b", "independent-run"),
@@ -131,18 +136,7 @@ def test_generic_e2e_archive_verification_blocks_digital_revision_mismatch(tmp_p
     job = _job(tmp_path)
     orchestrator = DigitalCopyOrchestrator(tmp_path / "package", _executors())
     result = orchestrator.run(job)
-    lock = RevisionLock(
-        revision_id=result.revision_id,
-        document_id=result.document_id,
-        source_sha256=result.source.sha256,
-        digital_revision="digital-e2e",
-        protocol_version="2.1",
-        parser_versions=(("e2e", "1.0"),),
-    )
-    lock_dir = tmp_path / "locks" / lock.revision_id
-    lock_dir.mkdir(parents=True)
-    (lock_dir / "digital-representation.json").write_text("{}\n", encoding="utf-8")
-    (lock_dir / "reproducibility-manifest.json").write_text(lock.manifest_json(), encoding="utf-8")
+    lock = _locked_revision(tmp_path, result)
     record = _verification(lock, "verifier-a", "independent-model")
     orchestrator.archive_revision(
         result,
@@ -200,3 +194,52 @@ def test_generic_e2e_unknown_stage_binding_is_rejected(tmp_path: Path):
     with pytest.raises(ValueError, match="Unsupported Digital Copy job bindings"):
         DigitalCopyOrchestrator(tmp_path / "package", executors).run(job)
     assert job.status == DigitalCopyStatus.BLOCKED
+
+
+def test_generic_e2e_package_artifact_tamper_blocks_replay(tmp_path: Path):
+    job = _job(tmp_path)
+    package = tmp_path / "package"
+    result = DigitalCopyOrchestrator(package, _executors()).run(job)
+    assert result.status == DigitalCopyStatus.DIGITAL_ACCEPTED
+
+    artifact = package / "artifacts" / "stage-evidence.json"
+    artifact.write_text("tampered\n", encoding="utf-8")
+    valid, issues = verify_package(result, package)
+    assert not valid
+    assert any("artifact hash mismatch" in issue for issue in issues)
+    replayed_job, replay_issues = replay_package(package)
+    assert replayed_job is None
+    assert any("artifact hash mismatch" in issue for issue in replay_issues)
+
+
+def test_generic_e2e_packaged_source_tamper_blocks_replay(tmp_path: Path):
+    job = _job(tmp_path)
+    package = tmp_path / "package"
+    result = DigitalCopyOrchestrator(package, _executors()).run(job)
+    packaged_source = package / "source" / result.source.filename
+    packaged_source.write_bytes(packaged_source.read_bytes() + b"tampered")
+
+    valid, issues = verify_package(result, package)
+    assert not valid
+    assert any("Packaged intake source SHA-256" in issue for issue in issues)
+    replayed_job, replay_issues = replay_package(package)
+    assert replayed_job is None
+    assert any("Packaged intake source SHA-256" in issue for issue in replay_issues)
+
+
+def test_generic_e2e_archive_requires_two_independent_verifiers(tmp_path: Path):
+    job = _job(tmp_path)
+    orchestrator = DigitalCopyOrchestrator(tmp_path / "package", _executors())
+    result = orchestrator.run(job)
+    lock = _locked_revision(tmp_path, result)
+    record = _verification(lock, "verifier-a", "independent-model")
+
+    with pytest.raises(ValueError, match="At least two independent AI verification records"):
+        orchestrator.archive_revision(
+            result,
+            lock,
+            (record,),
+            lock_root=tmp_path / "locks",
+            archive_root=tmp_path / "archive",
+            created_at="2026-09-15T10:01:00+03:00",
+        )
