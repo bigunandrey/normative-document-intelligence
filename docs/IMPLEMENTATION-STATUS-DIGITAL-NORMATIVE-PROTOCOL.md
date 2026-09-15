@@ -6,8 +6,8 @@
 
 ## 1. Status vocabulary
 
-- **COMPLETE** — generic NDI contract is implemented and covered by tests/CI.
-- **PARTIAL** — a material subset is implemented, but the complete generic contract is not closed.
+- **COMPLETE** — generic contract is implemented and covered by tests/CI.
+- **PARTIAL** — a material subset is implemented, but the complete implementation is not production-complete.
 - **OPEN** — not yet implemented or not yet proven end-to-end.
 - **DOWNSTREAM BY DESIGN** — belongs to a domain-specific normative/engineering layer.
 - **HISTORICAL EVIDENCE ONLY** — evidence migrated from earlier work; not fresh NDI execution.
@@ -19,7 +19,11 @@ A `COMPLETE` generic contract does not imply that any particular normative docum
 
 The generic NDI engine has CI-verified contracts for source identity, parser-neutral canonical structure, multi-parser reconciliation, authoritative-source comparison, canonical Digital Copy persistence/replay, typed production orchestration, semantic representation, graphical verification evidence, revision locking, independent verification, operational revision archiving and the generic Digital Copy UI.
 
+The **Product UI Contract is now closed as a specification** in `docs/PRODUCT-UI-CONTRACT.md`. It fixes the required views, workspace model, bidirectional source/structure/Digital Copy navigation, graphical verification behavior, evidence presentation, fail-closed UI rules, engine/UI boundary and UI completion tests.
+
 Phases 8, 9 and 10 are closed at the generic contract level. Phase 10 closure is documented in `docs/PHASE-10-CLOSURE-2026-09-15.md`. Its final regression implementation head was `98dfd927352a7e10d4c03e37af9cd432884b73f7`; GitHub Actions run `34984635942` / test job `104433472094` completed successfully. Phase 11 is now the active real-corpus validation gate.
+
+The current UI implementation is **PARTIAL against the closed Product UI Contract**: the shell, intake, lifecycle, persistence, PDF display and graphical-evidence listing exist, while the full interactive document workspace remains an implementation hardening item. This distinction is intentional: the product contract is closed; missing interactions are implementation gaps and must not be solved by weakening the contract.
 
 ## 3. Requirement-by-requirement cross-check
 
@@ -58,23 +62,54 @@ Phases 8, 9 and 10 are closed at the generic contract level. Phase 10 closure is
 | §26 | Full reproducibility through preserved artifacts | **COMPLETE FOR GENERIC PACKAGE CONTRACT** | Self-contained package, hashes and replay; source/artifact tamper E2E coverage is green. |
 | §27 | AI must execute to factual result and leave explicit handoff if blocked | **PARTIAL** | Fail-closed orchestration and handoff artifact exist; runtime policy enforcement remains open. |
 
-## 4. Phase 10 closure
+## 4. Product UI Contract closure
+
+`docs/PRODUCT-UI-CONTRACT.md` is the binding product/UI specification derived from Protocol v2.1. It closes the definition of the generic UI rather than claiming that every visual interaction is already implemented.
+
+### Contract — COMPLETE
+
+The closed contract defines:
+
+- twelve mandatory information views;
+- Digital Copy Workspace as the primary interaction model;
+- source PDF ↔ canonical structure ↔ Digital Copy synchronization;
+- bidirectional node/source navigation;
+- graphical viewer with source-region overlays;
+- source-coordinate to viewport-coordinate transformation;
+- critical visual element handling;
+- evidence/provenance presentation;
+- extraction and reconciliation evidence views;
+- discrepancy workspace;
+- verification and acceptance views;
+- immutable revision/history and exact-revision export/handoff;
+- strict UI/engine responsibility boundary;
+- fail-closed UI behavior;
+- UI integrity/security rules;
+- implementation-level test contract.
+
+### Implementation — PARTIAL
+
+The current `src/ndi/digital_copy_ui.py` provides the generic shell, intake, persisted jobs, lifecycle/blocker display, PDF source access, graphical-evidence listing, run/archive API boundaries and restart persistence. The remaining implementation gap is the full interactive workspace: native page rendering with synchronized overlays, structure explorer, bidirectional spatial selection, discrepancy/evidence workspaces, and rich verification/acceptance/revision/export views.
+
+These are implementation tasks under the closed contract and do not justify changing the Digital Normative Document Protocol.
+
+## 5. Phase 10 closure
 
 Phase 10 is closed for the generic Digital Copy contract. The closure matrix is recorded in `docs/PHASE-10-CLOSURE-2026-09-15.md` and includes lifecycle, reconciliation, external-source, graphical, semantic, critical visual, amendment/deletion, extraction, tamper, verification, archive/replay and UI persistence cases.
 
 The closure does not claim completion of any real normative document.
 
-## 5. Phase 11 — real normative corpus validation
+## 6. Phase 11 — real normative corpus validation
 
 Phase 11 is the active validation gate. The engine should now be exercised against a deliberately diverse authoritative corpus including DBN, DSTU/DSTU EN, ISO/IEC, NFPA and legal/regulatory sources where available.
 
 The corpus must include text-native and scanned PDFs, tables, formulas, notes/footnotes, amendments/deletions and complex layouts. Each failure is classified by generic subsystem. Generic capability gaps are fixed in the engine and added to regression coverage; document-specific exceptions are not used as substitutes for generic fixes.
 
-## 6. Phase 12 — downstream integration
+## 7. Phase 12 — downstream integration
 
 After Phase 11 establishes generalization, accepted Digital Copies can be consumed by normative registers, SPZ semantics and engineering calculation/execution layers.
 
-## 7. Operational rule
+## 8. Operational rule
 
 After every implementation change:
 
