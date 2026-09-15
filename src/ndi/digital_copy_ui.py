@@ -14,6 +14,7 @@ from .digital_copy_package import persist_package
 from .digital_copy_workflow import DigitalCopyJob, DigitalCopySource, DigitalCopyStatus, load_job, new_job
 
 Runner = Callable[[DigitalCopyJob], DigitalCopyJob]
+Archiver = Callable[[DigitalCopyJob], DigitalCopyJob]
 
 _STATUS_ORDER = (
     DigitalCopyStatus.NEW, DigitalCopyStatus.IDENTIFYING, DigitalCopyStatus.EXTRACTING,
@@ -42,6 +43,7 @@ def _job_payload(job: DigitalCopyJob) -> dict[str, object]:
     payload = job.as_dict()
     payload["accepted"] = job.accepted
     payload["artifact_names"] = sorted(job.artifacts)
+    payload["operational_archive"] = job.metadata.get("operational_archive")
     return payload
 
 
@@ -80,10 +82,11 @@ iframe{{width:100%;height:720px;border:1px solid #ccd3db;border-radius:8px;backg
 class DigitalCopyUI:
     """Thin presentation/API boundary over persisted Digital Copy packages."""
 
-    def __init__(self, workspace_root: Path, runner: Runner | None = None):
+    def __init__(self, workspace_root: Path, runner: Runner | None = None, archiver: Archiver | None = None):
         self.workspace_root = workspace_root.resolve()
         self.workspace_root.mkdir(parents=True, exist_ok=True)
         self.runner = runner
+        self.archiver = archiver
 
     def _job(self, job_id: str) -> DigitalCopyJob | None:
         candidate = self.workspace_root / job_id / "job.json"
@@ -103,7 +106,8 @@ class DigitalCopyUI:
         cards = "".join(
             f'<div class="card"><a href="/jobs/{escape(job.job_id)}"><h3>{escape(job.source.filename)}</h3></a>'
             f'<span class="badge {_status_class(job.status)}">{escape(job.status.value)}</span>'
-            f'<p>Job: <code>{escape(job.job_id)}</code><br>Revision: <code>{escape(job.revision_id or "not locked")}</code></p></div>'
+            f'<p>Job: <code>{escape(job.job_id)}</code><br>Revision: <code>{escape(job.revision_id or "not locked")}</code>'
+            f'<br>Archive: <code>{escape(str(job.metadata.get("operational_archive", {}).get("archive_id", "not archived")))}</code></p></div>'
             for job in jobs
         ) or '<div class="card">No Digital Copies yet.</div>'
         body = f'''<h1>Digital Copies</h1><div class="card"><h2>Create Digital Copy</h2>
@@ -141,11 +145,23 @@ document.getElementById('create-form').addEventListener('submit', async (event) 
         blockers = "".join(f"<li>{escape(item)}</li>" for item in job.blockers) or "<li>None</li>"
         run = (f'<form action="/api/jobs/{escape(job.job_id)}/run" method="post"><input type="submit" value="Run workflow"></form>'
                if self.runner else '<p><small>Workflow runner is not configured in this generic UI process.</small></p>')
+        archive = job.metadata.get("operational_archive")
+        archive_controls = (
+            f'<p><strong>Archived:</strong> <code>{escape(str(archive.get("archive_id", "")))}</code> '
+            f'<span class="badge accepted">{escape(str(archive.get("result", "")))}</span> '
+            f'<br>Manifest SHA-256 <code>{escape(str(archive.get("manifest_sha256", "")))}</code>'
+            f'<br>Archive verification <strong>{"VALID" if archive.get("verified") else "UNVERIFIED"}</strong></p>'
+            if archive else (
+                f'<form action="/api/jobs/{escape(job.job_id)}/archive" method="post"><input type="submit" value="Archive accepted revision"></form>'
+                if self.archiver and job.accepted else '<p><small>Operational archive is available after DIGITAL_ACCEPTED and requires a configured archive service.</small></p>'
+            )
+        )
         source_url = f"/jobs/{escape(job.job_id)}/source"
         body = f'''<p><a href="/">← Digital Copies</a></p><h1>{escape(job.source.filename)}</h1>
 <div class="card"><span class="badge {_status_class(job.status)}">{escape(job.status.value)}</span>
 <p>Job <code>{escape(job.job_id)}</code><br>Document <code>{escape(job.document_id or "not identified")}</code><br>
 Revision <code>{escape(job.revision_id or "not locked")}</code><br>SHA-256 <code>{escape(job.source.sha256)}</code></p>{run}</div>
+<div class="card"><h2>Operational Archive</h2>{archive_controls}</div>
 <div class="card"><h2>Lifecycle</h2><table><tr><th>State</th><th>Marker</th></tr>'''
         for status in _STATUS_ORDER:
             body += f'<tr><td>{escape(status.value)}</td><td>{"CURRENT" if status == job.status else ""}</td></tr>'
@@ -220,6 +236,19 @@ Revision <code>{escape(job.revision_id or "not locked")}</code><br>SHA-256 <code
                 return self._respond(start_response, "409 Conflict", _json({"error": "runner_not_configured"}), "application/json")
             try:
                 result = self.runner(job)
+            except Exception as exc:  # noqa: BLE001
+                return self._respond(start_response, "409 Conflict", _json({"error": type(exc).__name__, "detail": str(exc)}), "application/json")
+            return self._respond(start_response, "200 OK", _json(_job_payload(result)), "application/json")
+        if method == "POST" and path.startswith("/api/jobs/") and path.endswith("/archive"):
+            job = self._job(path.split("/")[3])
+            if job is None:
+                return self._respond(start_response, "404 Not Found", _json({"error": "job_not_found"}), "application/json")
+            if self.archiver is None:
+                return self._respond(start_response, "409 Conflict", _json({"error": "archiver_not_configured"}), "application/json")
+            if not job.accepted:
+                return self._respond(start_response, "409 Conflict", _json({"error": "job_not_accepted"}), "application/json")
+            try:
+                result = self.archiver(job)
             except Exception as exc:  # noqa: BLE001
                 return self._respond(start_response, "409 Conflict", _json({"error": type(exc).__name__, "detail": str(exc)}), "application/json")
             return self._respond(start_response, "200 OK", _json(_job_payload(result)), "application/json")
