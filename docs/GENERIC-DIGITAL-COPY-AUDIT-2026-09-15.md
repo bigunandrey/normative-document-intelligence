@@ -9,9 +9,9 @@
 
 The repository contains substantial, CI-tested generic contracts for identity, source binding, canonical structure, parser adapters, reconciliation, external-source comparison, graphical-verification validation, revision locking, independent verification and semantic representation.
 
-The critical gap is integration: the repository does not yet contain a production Digital Copy application workflow that takes a user PDF through one persisted job/package lifecycle to final acceptance, nor a user-facing web UI. The current executable interface is a narrow CLI that extracts a PDF with MarkItDown and prints the source hash/parser version.
+The persistence boundary has now been hardened: Digital Copy packages can be created as self-contained packages, source/artifact hashes are verified, package-local paths are rebound on replay, and replay no longer depends on the original source/artifact locations.
 
-The current source protocol and roadmap explicitly identify this boundary: generic persistence primitives are present, while end-to-end orchestration, package lifecycle, UI, graphical evidence workflow, operational revision/handoff, replay and generic end-to-end regression remain open.
+The remaining critical gap is integration: the repository does not yet contain a production Digital Copy application workflow that takes a user PDF through one orchestrated job/package lifecycle to final acceptance, nor a user-facing web UI.
 
 ## Pipeline audit
 
@@ -19,7 +19,7 @@ The current source protocol and roadmap explicitly identify this boundary: gener
 |---|---|---|---|
 | PDF INPUT | PARTIAL | CLI accepts a PDF path, but there is no user-facing intake/job lifecycle. | Add production intake API/service and persisted job creation. |
 | IDENTITY | COMPLETE CORE / NOT ORCHESTRATED | `DocumentIdentity`, source registry and revision binding exist. | Integrate into intake workflow and lifecycle. |
-| SOURCE INTEGRITY | COMPLETE CORE / NOT ORCHESTRATED | SHA-256 binding and revision lock exist. | Persist original source metadata/package and expose status. |
+| SOURCE INTEGRITY | COMPLETE CORE / NOT ORCHESTRATED | SHA-256 binding and revision lock exist; package-local source persistence is now implemented. | Integrate into complete job lifecycle and expose status. |
 | EXTRACTION | PARTIAL | MarkItDown/pypdf plus adapter contracts exist; extraction is not unified into one production run. | Build orchestrated extraction stage and persistent extraction log. |
 | PARSER REGISTRY | COMPLETE | Registry, contracts and default adapters exist. | Integrate runtime failure/availability states into job model. |
 | ADAPTERS | COMPLETE CORE | MarkItDown, pypdf, Docling, OpenDataLoader adapters are present. | Add end-to-end fixtures for adapter failure/degraded cases. |
@@ -38,11 +38,11 @@ The current source protocol and roadmap explicitly identify this boundary: gener
 | DISCREPANCIES | COMPLETE CORE / UI MISSING | Conflicts/missing/unmatched observations are retained. | First-class lifecycle/API/UI for review and resolution. |
 | GRAPHICAL VERIFICATION | PARTIAL | Validator exists and is fail-closed, but there is no page/region viewer/evidence workflow. | Implement source-page/region evidence service + UI + fixture corpus. |
 | PROVENANCE | COMPLETE CORE | Canonical/source anchors, semantic provenance and evidence hashes exist. | Verify provenance is emitted consistently in package export. |
-| REVISION LOCK | COMPLETE CORE | Immutable revision ID, source hash, parser versions and evidence hashes. | Integrate into complete package lifecycle/replay. |
+| REVISION LOCK | COMPLETE CORE | Immutable revision ID, source hash, parser versions and evidence hashes. | Integrate into complete package lifecycle. |
 | VERIFICATION | COMPLETE CORE / OPERATIONAL OPEN | AI verification records + final acceptance validator exist. | Implement review workflow and persisted verification archive. |
 | REGRESSION | PARTIAL | Broad unit tests exist, including graphical and semantic tests; no generic end-to-end fixture corpus/workflow. | Build controlled generic fixtures and E2E regression suite. |
 | DIGITAL_ACCEPTED | COMPLETE CORE / PRODUCT OPEN | Final gate blocks missing evidence and requires AI verification. | Make acceptance an emergent lifecycle state only after full orchestrated evidence chain. |
-| REPRODUCIBILITY | PARTIAL | Revision manifest exists and lock verification exists. | Add full package replay from persisted artifacts. |
+| REPRODUCIBILITY | COMPLETE PACKAGE CORE / PRODUCT INTEGRATION OPEN | Package creation persists source/job/manifest, verifies artifact hashes and replays using package-local paths after original locations are removed. | Integrate package creation/replay into the production lifecycle. |
 | HANDOFF | MISSING AS FIRST-CLASS WORKFLOW | Protocol requires explicit handoff, implementation status marks it partial. | Add handoff artifact/schema/API/UI and pending state. |
 | UI | OPEN / MISSING | No frontend framework or web application found. | Build web UI around the generic engine. |
 | API/BACKEND | OPEN / MISSING | No FastAPI/Flask/other application backend found; only CLI entry point. | Add service/API layer for jobs, artifacts, discrepancies, verification and export. |
@@ -53,36 +53,41 @@ The current source protocol and roadmap explicitly identify this boundary: gener
 
 `ndi-ingest` currently performs direct PDF extraction with MarkItDown and prints the source SHA-256 and parser version. It does not create a Digital Copy job, run the full parser set, persist a complete evidence package, expose discrepancies, run graphical verification, manage verification records, or produce a final acceptance package.
 
-### 2. The core contracts are present but disconnected
+### 2. The persistence/replay boundary is now closed at generic package level
 
-`ingestion.py`, `verification.py`, `graphical_verification.py`, `revision_lock.py`, external-source modules and semantic modules establish substantial building blocks. The principal engineering gap is a unified orchestration layer that composes them deterministically and persists all intermediate/final artifacts.
+A Digital Copy package now has a deterministic manifest, immutable package-local source copy, job JSON and artifact hashes. Replay verifies these bindings and returns package-local source/artifact paths, so the package can be moved or replayed after the original source/artifact locations are removed.
 
-### 3. Canonical structure has some implicit fields but lacks dedicated generic contracts for known failure classes
+This closes the previously identified package/replay gap, but it does not populate the package with the full pipeline's artifacts automatically.
+
+### 3. The core contracts are present but disconnected
+
+`ingestion.py`, `verification.py`, `graphical_verification.py`, `revision_lock.py`, external-source modules and semantic modules establish substantial building blocks. The principal engineering gap is now the unified orchestration layer that composes them deterministically and persists all intermediate/final artifacts.
+
+### 4. Canonical structure has some implicit fields but lacks dedicated generic contracts for known failure classes
 
 Headers/footers, notes/footnotes and node ordering exist at model level, but reading order and numbering are not yet explicit production verification contracts. These should be hardened before real-document corpus work.
 
-### 4. Graphical verification is currently validation logic, not an evidence-producing product workflow
+### 5. Graphical verification is currently validation logic, not an evidence-producing product workflow
 
 The validator requires source hash, checked pages, critical categories, verifier/timestamp and no unresolved discrepancies. What is missing is the actual page/region evidence capture and user interaction needed to produce those records reliably.
 
-### 5. UI and API are a P0 product gap
+### 6. UI and API are a P0 product gap
 
 No frontend or application server was found in the repository. This is consistent with the roadmap's Phase 9 `OPEN` status.
 
-### 6. Generic regression is not yet end-to-end
+### 7. Generic regression is not yet end-to-end
 
 The repository has many focused unit tests, including adapter, ingestion, reconciliation, graphical verification, external-source and semantic tests. A controlled end-to-end fixture corpus that drives a complete PDF → Digital Copy lifecycle is still missing.
 
 ## Immediate implementation priority
 
-1. Create a production orchestration package for one Digital Copy job lifecycle.
-2. Define persisted job/document-package schemas and lifecycle statuses.
-3. Integrate intake → identity → hash → parser observations → reconciliation → external check → canonicalization → semantic artifacts → graphical verification evidence → revision lock → independent verification → regression → final acceptance.
+1. **Current:** create the production orchestration service for one Digital Copy job lifecycle.
+2. Integrate intake → identity → hash → parser observations → reconciliation → external check → canonicalization → semantic artifacts → graphical verification evidence → revision lock → independent verification → regression → final acceptance.
+3. Persist a complete package after each material stage and retain extraction/discrepancy/verification evidence.
 4. Add explicit reading-order and numbering validation contracts.
-5. Add first-class extraction log, discrepancy register, verification archive, handoff and replay artifacts.
-6. Expose the workflow through an application API.
-7. Build the UI against that API.
-8. Build generic end-to-end fixtures and make CI exercise the complete workflow.
+5. Expose the workflow through an application API.
+6. Build the UI against that API.
+7. Build generic end-to-end fixtures and make CI exercise the complete workflow.
 
 ## Constraints respected
 
