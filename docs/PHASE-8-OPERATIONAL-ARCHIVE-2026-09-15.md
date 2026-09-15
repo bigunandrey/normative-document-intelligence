@@ -1,12 +1,12 @@
-# Phase 8 Progress Record — Revision Lock / Independent Verification / Operational Archive
+# Phase 8 Closure Record — Revision Lock / Independent Verification / Operational Archive
 
 **Date:** 2026-09-15  
 **Repository:** `bigunandrey/normative-document-intelligence`  
-**Status:** PARTIAL — CORE + OPERATIONAL ARCHIVE CONTRACT IMPLEMENTED / UI-ORCHESTRATION INTEGRATION OPEN
+**Status:** COMPLETE FOR GENERIC OPERATIONAL CONTRACT ✅
 
 ## Result
 
-Phase 8 has been advanced from a core-only contract to a deterministic operational `Rev_NNN` archive contract.
+Phase 8 closes the generic operational revision chain from immutable revision lock through independent verification and `Rev_NNN` archive, including orchestration/UI lifecycle integration.
 
 ## Implemented
 
@@ -23,7 +23,10 @@ Phase 8 has been advanced from a core-only contract to a deterministic operation
 - verification evidence hash validation;
 - archive manifest tamper detection;
 - verification-record tamper detection;
-- fail-closed archive creation when the locked revision is unavailable or invalid.
+- fail-closed archive creation when the locked revision is unavailable or invalid;
+- Digital Copy orchestrator archive integration;
+- persisted archive identity/result/verification metadata;
+- UI archive/status integration and final handoff linkage.
 
 ## Evidence chain
 
@@ -41,23 +44,18 @@ Rev_NNN Archive
 Binding / Hash Verification
       ↓
 Tamper Detection
+      ↓
+Digital Copy Job / UI / Handoff
 ```
 
 ## Regression
 
-Dedicated regression coverage verifies sequential archive creation, duplicate-revision rejection, minimum independent-verification requirements, manifest tampering, verification-record tampering and missing/invalid revision-lock blocking.
-
-The repository CI run for the implementation test head completed successfully before the documentation update.
+Dedicated regression coverage verifies sequential archive creation, duplicate-revision rejection, minimum independent-verification requirements, manifest tampering, verification-record tampering and missing/invalid revision-lock blocking. Generic E2E coverage additionally proves the accepted-job → archive → archive-verification lifecycle.
 
 ## Explicit boundary
 
-The phase is **not yet fully closed**. The remaining integration work is:
+Production authentication/authorization and deployment-specific access control remain outside the generic engine contract. Rich UI overlays are product-hardening work and do not alter the Phase 8 evidence contract.
 
-1. make archive creation a first-class operation of the Digital Copy orchestrator;
-2. expose archive identity/result/tamper state through the UI;
-3. connect the archive to the final handoff/acceptance lifecycle;
-4. leave production authentication/access-control concerns outside the generic engine unless required by the deployment layer.
+## Next phase
 
-## Next step
-
-Complete the Phase 8 orchestration/UI integration, then proceed to **Phase 10 — Generic End-to-End Regression**.
+**Phase 10 — Generic End-to-End Regression** is the active completion gate for the overall generic Digital Copy product block. Real normative-corpus validation remains blocked by design until Phase 10 closes.
