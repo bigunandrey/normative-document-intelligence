@@ -233,6 +233,7 @@ class DigitalCopyOrchestrator:
             },
         )
         archive_record_path = archive_root.resolve() / record.archive_id / "archive-record.json"
+        package_archive = write_artifact(self.package_root, "artifacts/operational-archive.json", record.to_json())
         job.metadata["operational_archive"] = {
             "archive_id": record.archive_id,
             "result": record.result,
@@ -242,9 +243,10 @@ class DigitalCopyOrchestrator:
             "manifest_sha256": record.manifest_sha256,
             "verification_hashes": list(record.verification_hashes),
             "created_at": record.created_at,
+            "archive_path": str(archive_record_path),
             "verified": True,
         }
-        job.artifacts["operational_archive"] = str(archive_record_path)
+        job.artifacts["operational_archive"] = str(package_archive)
         self._persist_handoff(job)
         self._persist(job)
         return record
