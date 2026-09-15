@@ -18,20 +18,24 @@ Real normative documents remain validation corpus, not the development driver, u
 ### Phase 3 — External source discovery, retrieval and comparison — **COMPLETE FOR GENERIC CONTRACT ✅**
 ### Phase 4 — Integrated reconciliation — **COMPLETE FOR GENERIC CONTRACT ✅**
 ### Phase 5 — Canonical Digital Copy and persistence — **COMPLETE FOR GENERIC CONTRACT ✅**
-
-Implemented and CI-verified: deterministic job persistence, stage-evidence contract, production orchestration boundary, per-stage evidence history, extraction log, canonical Digital Copy persistence, immutable package-local source copy, manifest/hash binding, self-contained package creation, fail-closed verification, replay/path rebinding and handoff artifact.
-
 ### Phase 6 — Semantic Digital Copy layer — **COMPLETE FOR GENERIC CONTRACT ✅ / PRODUCT INTEGRATION OPEN**
-
-Atomic normative units, exact operators, conditions/exceptions, applicability/type links, table/formula registry primitives, dependency graph/resolution, source-bound evaluation, amendment actions, semantic provenance and fail-closed semantic acceptance are implemented.
-
 ### Phase 7 — Graphical verification — **COMPLETE FOR GENERIC EVIDENCE CONTRACT ✅**
+### Phase 8 — Revision lock and independent verification — **PARTIAL: CORE + OPERATIONAL ARCHIVE CONTRACT IMPLEMENTED / PRODUCT INTEGRATION OPEN 🔄**
 
-Page/region evidence, critical-element taxonomy, source/observed text, match result, verifier/time, deterministic persistence and fail-closed validation are implemented. Viewer/UI integration was intentionally deferred to Phase 9.
+Implemented and CI-verified:
 
-### Phase 8 — Revision lock and independent verification — **COMPLETE FOR CORE CONTRACT / OPERATIONAL WORKFLOW OPEN ▶️**
+- immutable revision lock and deterministic revision ID;
+- reproducibility manifest and package replay;
+- independent AI verification records with distinct independence bases;
+- fail-closed final acceptance contract;
+- immutable `Rev_NNN` operational archive;
+- archive source/revision/document binding;
+- archived verification evidence and hash validation;
+- duplicate archival of the same revision is rejected;
+- tamper detection for archive manifest and verification evidence;
+- fail-closed archive creation when the locked revision is missing/invalid.
 
-Immutable revision lock, deterministic revision ID, reproducibility manifest, package replay, independent verification records and final acceptance validation are implemented. `Rev_NNN` archive and operational verification archive remain open.
+Remaining for full operational closure: orchestration/UI integration of archive creation and archive/status controls, plus production access-control concerns.
 
 ### Phase 9 — Generic Digital Copy User Interface — **PARTIAL: GENERIC UI SHELL COMPLETE / OPERATIONAL PRODUCT INTEGRATION OPEN 🔄**
 
@@ -48,7 +52,7 @@ Implemented and CI-covered:
 9. injected workflow-runner boundary;
 10. `ndi-ui` launch command.
 
-Remaining: concrete production executors, production auth/access control, rich PDF region overlays, operational archive controls and complete E2E execution. These are not claimed closed by the generic UI shell.
+Remaining: production executors, archive controls, production auth/access control, rich PDF region overlays and complete E2E execution.
 
 ### Phase 10 — Generic end-to-end regression suite — **NEXT P1 ⏳**
 
@@ -64,9 +68,9 @@ Only after generic Digital Copy is stable should accepted representations be con
 
 ## 3. Current open work — priority order
 
-### P0 — Operational verification / revision / handoff **← CURRENT STEP**
+### P0 — Complete Phase 8 operational integration **← CURRENT STEP**
 
-Complete the `Rev_NNN` archive lifecycle, operational independent-verification archive and user-visible archive/status controls.
+Connect `Rev_NNN` archive creation and verification to the Digital Copy orchestration/UI lifecycle. Expose archive identity, verification result and tamper/blocker state to the user. Preserve fail-closed behavior and immutable revision semantics.
 
 ### P1 — Generic end-to-end regression
 
@@ -92,12 +96,13 @@ The generic block is complete when a user can provide a normative PDF and obtain
 - graphical verification evidence or an explicit blocked state;
 - immutable revision lock;
 - independent verification records;
+- operational `Rev_NNN` archive;
 - regression result;
 - reproducibility manifest;
 - complete export/handoff package;
 - final status that is either `DIGITAL_ACCEPTED` or explicitly blocked with machine-readable reasons.
 
-Phase 9 UI shell is implemented, but the overall product Definition of Done still depends on operational verification/archive, concrete execution and generic E2E regression.
+Phase 8 has an operational archive contract, but the overall product Definition of Done still depends on its UI/orchestration integration and generic E2E regression.
 
 ## 5. Operational rule
 
