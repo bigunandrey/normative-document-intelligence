@@ -195,11 +195,13 @@ Revision <code>{escape(job.revision_id or "not locked")}</code><br>SHA-256 <code
             filename = Path(environ.get("HTTP_X_FILENAME", "source.pdf")).name
             if not filename.lower().endswith(".pdf"):
                 return self._respond(start_response, "400 Bad Request", _json({"error": "source_must_be_pdf"}), "application/json")
-            incoming = self.workspace_root / ".incoming" / f"{uuid4().hex}-{filename}"
-            incoming.parent.mkdir(exist_ok=True)
+            job_id = uuid4().hex
+            incoming_dir = self.workspace_root / ".incoming" / job_id
+            incoming = incoming_dir / filename
+            incoming_dir.mkdir(parents=True, exist_ok=True)
             incoming.write_bytes(environ["wsgi.input"].read(length))
             try:
-                job = new_job(uuid4().hex, DigitalCopySource.from_file(incoming))
+                job = new_job(job_id, DigitalCopySource.from_file(incoming))
                 root = self.workspace_root / job.job_id
                 persist_package(job, root)
                 job.source = DigitalCopySource(str((root / "source" / filename).resolve()), filename, job.source.sha256)
@@ -208,6 +210,7 @@ Revision <code>{escape(job.revision_id or "not locked")}</code><br>SHA-256 <code
                 (root / "job.json").write_text(json.dumps(job.as_dict(), ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
             finally:
                 incoming.unlink(missing_ok=True)
+                incoming_dir.rmdir()
             return self._respond(start_response, "201 Created", _json(_job_payload(job)), "application/json")
         if method == "POST" and path.startswith("/api/jobs/") and path.endswith("/run"):
             job = self._job(path.split("/")[3])
