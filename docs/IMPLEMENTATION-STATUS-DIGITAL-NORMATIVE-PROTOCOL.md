@@ -1,178 +1,199 @@
 # Implementation Status — DIGITAL-NORMATIVE-DOCUMENT-PROTOCOL v2.1
 
 **Repository:** `bigunandrey/normative-document-intelligence`  
-**Checked:** 2026-09-14  
-**Protocol source:** migrated from `bigunandrey/fire-protection-engine/docs/normative/DIGITAL-NORMATIVE-DOCUMENT-PROTOCOL.md`  
-**Source protocol SHA:** `64338fb906bb5fc3f2d49130ed16b04b1893b3e0`  
-**NDI baseline:** `main` at commit `b95ee8174fb59f1cec3183aac9bf19788bf042c7`
+**Status basis:** current `main` implementation and CI-verified commits  
+**Strategy revision:** 2026-09-15
 
-## 1. Status vocabulary used here
+## 1. Status vocabulary
 
-- **IMPLEMENTED** — requirement is represented by current NDI code/tests/artifacts.
-- **PARTIAL** — a material subset is implemented, but the protocol requirement is not closed end-to-end.
-- **NOT IMPLEMENTED** — the requirement is not currently implemented in NDI.
-- **DOWNSTREAM BY DESIGN** — the protocol requires it, but NDI architecture explicitly assigns the responsibility to downstream domain-specific normative layers rather than to the generic document-intelligence core.
-- **HISTORICAL EVIDENCE ONLY** — evidence exists in the migrated DBN benchmark, but NDI does not claim a fresh implementation/execution.
+- **COMPLETE** — generic NDI contract is implemented and covered by tests/CI.
+- **PARTIAL** — a material subset is implemented, but the complete generic contract is not closed.
+- **OPEN** — not yet implemented or not yet proven end-to-end.
+- **DOWNSTREAM BY DESIGN** — belongs to a domain-specific normative/engineering layer, not the generic PDF → Digital Copy engine.
+- **HISTORICAL EVIDENCE ONLY** — evidence migrated from earlier work; not fresh NDI execution.
+- **BLOCKED** — implementation may exist, but validation is blocked by unavailable real-document bytes or another external prerequisite.
 
-This distinction is important: a requirement being outside NDI's generic boundary is not treated as a defect in the parser-neutral core.
+A `COMPLETE` generic contract does not imply that any particular normative document is already `DIGITAL_ACCEPTED`.
 
-## 2. Executive result
+## 2. Executive result — current state
 
-### Closed in NDI
+The generic NDI engine has progressed substantially beyond the former structural-only boundary. The following blocks are implemented and CI-verified:
 
-The following core requirements are already implemented:
+1. Source identity, metadata and SHA-256 binding.
+2. Parser-neutral canonical structural document model.
+3. Multi-parser adapter/observation contract with provenance validation.
+4. Cross-parser matching, reconciliation and retained discrepancies.
+5. Fail-closed structural verification gates A–C.
+6. External authoritative-source discovery, retrieval, integrity verification and multi-parser external comparison.
+7. Digital representation persistence and immutable revision lock.
+8. Independent AI verification records and final acceptance contract.
+9. Atomic normative semantic decomposition with exact normative operators.
+10. Conditions, exceptions and applicability/type links.
+11. Table/formula rule registry primitives and validation.
+12. Dependency/cross-reference graph and deterministic target resolution.
+13. Deterministic semantic evaluation with fail-closed unresolved states.
+14. Amendment/deletion actions with explicit ADD/REPLACE/DELETE semantics.
+15. Complete semantic provenance validation back to canonical nodes/source evidence.
+16. Fail-closed semantic acceptance validation.
 
-1. Source identity / SHA-256 handling.
-2. PDF extraction evidence via MarkItDown.
-3. Parser-neutral canonical structural document model.
-4. Stable document/node identifiers.
-5. Source anchors, page/geometry fields and provenance model.
-6. Parser observations with parser/version/confidence/attributes.
-7. Cross-parser matching and discrepancy detection.
-8. Reconciliation decisions (`AGREED`, `CONFLICT`, `MISSING_OBSERVATION`).
-9. Fail-closed structural recognition quality gate (`PASS`, `PASS_WITH_WARNINGS`, `FAIL`).
-10. Unit tests for canonical model, reconciliation and validator failure modes.
-11. DBN fixture identity and historical multi-parser benchmark evidence.
-
-### Still open in NDI
-
-The main open implementation blocks are:
-
-1. Full parser-adapter set beyond the existing MarkItDown extraction path.
-2. End-to-end construction of canonical structural observations from all benchmark parser outputs.
-3. Machine-readable final discrepancy report for the DBN fixture from the current NDI pipeline.
-4. Full structural recognition of tables/cells, formulas, headers/footers and reading order from actual parser observations.
-5. A complete ingestion pipeline that runs extraction → observation adaptation → canonicalization → reconciliation → quality gate as one production API/CLI workflow.
-6. Provenance-complete digital representation persistence/serialization as a first-class artifact of the pipeline.
-7. Regression/acceptance tests proving the complete DBN structural gate end-to-end.
-8. NDI-native revision/verification artifact machinery and source-hash/revision locking.
-
-### Explicitly downstream by design
-
-The following protocol layers are not defects in NDI merely because they are absent here:
-
-- semantic normative-rule interpretation;
-- applicability/type links as engineering semantics;
-- normative numeric/formula rule registries;
-- dependency graphs for engineering rules;
-- domain-specific master normative registers;
-- downstream deterministic normative execution.
-
-The NDI architecture explicitly says that it answers what structure and source evidence are present, while downstream domain projects answer what that content means for engineering/compliance decisions.
+The project is therefore no longer at the stage where the next useful step is to run one benchmark PDF. The next priority is to **finish the entire generic PDF → Digital Copy product/workflow**, including the user interface, all supporting artifacts, lifecycle controls and end-to-end contracts. Only after that should real normative documents be used as a validation suite.
 
 ## 3. Requirement-by-requirement cross-check
 
-| Protocol | Requirement | NDI status | Evidence / gap |
+| Protocol | Requirement | Current NDI status | Evidence / remaining work |
 |---|---|---|---|
-| §1 | Convert normative source into machine-readable, traceable representation | PARTIAL | Structural representation exists; full semantic digital-copy chain is not closed. |
-| §2 | `source_anchor → source_text → semantic/table/formula → operator → dependencies → verification/change` | PARTIAL | Source/structural side exists; semantic/operator/dependency/change layers are downstream/open. |
-| §3.1 | Source of truth + metadata + SHA-256 | IMPLEMENTED | Canonical document requires source SHA-256; stable document identity derives from it. |
-| §3.2 | Extraction is evidence, not normative truth | IMPLEMENTED | README and architecture explicitly enforce this boundary. |
-| §3.3 | No silent correction; discrepancies retained | IMPLEMENTED | Reconciliation and discrepancy layers retain conflicts instead of silently resolving them. |
-| §3.4 | Preserve normative operators exactly | DOWNSTREAM BY DESIGN | Operator semantics belong to normative semantic decomposition; NDI preserves raw/source text but does not yet implement normative operator extraction. |
-| §3.5 | Fail-closed on missing evidence | IMPLEMENTED | Recognition validator is explicitly fail-closed. |
-| §3.6 | AI inference cannot become normative truth | IMPLEMENTED | NDI architecture explicitly separates recognition from normative acceptance. |
-| §4 | Two master normative-register files | DOWNSTREAM BY DESIGN | SPZ Ukraine register is domain/project-level, not generic NDI core. |
-| §5 | Isolated `reference-data/<DOCUMENT_ID>` package | PARTIAL | DBN benchmark package exists under `benchmarks/`; generic per-document `reference-data` production structure is not yet implemented. |
-| §6 | AI-Revisions archive | NOT IMPLEMENTED | No NDI-native revision archive/workflow exists yet. |
-| §7 | Mandatory pre-work protocol reading/state inspection | NOT IMPLEMENTED | Protocol is now present in NDI, but no runtime enforcement exists. |
-| §8 | Source identification metadata + current edition/amendments | PARTIAL | Source hash and fixture identity exist; generic validity/edition/amendment register workflow is absent. |
-| §9 | Capture immutable primary source | PARTIAL | Source identity/hash is supported; NDI does not itself manage a generic source archive. |
-| §10 | Full extraction + extraction log | PARTIAL | MarkItDown extraction exists and CLI reports parser/hash/output; persistent extraction-log artifact is not yet a complete NDI contract. |
-| §11 | One-to-one decomposition into atomic normative units | PARTIAL | Canonical structural nodes exist, including paragraphs/lists/tables/formulas; full normative atomic decomposition is not closed. |
-| §12 | Semantic normalization fields | DOWNSTREAM BY DESIGN | Normative semantics are explicitly outside generic NDI scope. |
-| §13 | Table decomposition with notes/footnotes/special markers | PARTIAL | Canonical table/row/cell node types exist; actual parser-to-table reconstruction and verification are not closed. |
-| §14 | Formula extraction + graphical/machine-normalized verification | PARTIAL | `FORMULA` node type exists; actual formula parser adapters and graphical verification are not closed. |
-| §15 | Changes/deletions represented and traceable | NOT IMPLEMENTED | No generic change/deletion registry or revision-lock implementation exists in NDI. |
-| §16 | Open-source cross-check and discrepancy resolution | PARTIAL | Parser discrepancy machinery exists; external normative-source cross-check workflow does not. |
-| §17 | Graphical verification | NOT IMPLEMENTED | No NDI graphical/PDF visual verification gate is currently implemented. Historical DBN artifacts exist only in the former repository. |
-| §18 | Dependency mapping | DOWNSTREAM BY DESIGN / NOT IMPLEMENTED IN NDI | Generic source/dependency metadata can be carried, but normative dependency mapping is not implemented. |
-| §19 | ≥2 independent AI verification records for `DIGITAL_ACCEPTED` | NOT IMPLEMENTED | No independent-AI verification workflow exists in NDI. |
-| §20 | Update master MD/XLSX after verification | DOWNSTREAM BY DESIGN | Domain register synchronization is outside generic NDI. |
-| §21 | Explicit handoff protocol | NOT IMPLEMENTED | No NDI handoff artifact/schema/runtime. |
-| §22 | Regression of related rules/tables/formulas/downstream logic | PARTIAL | Unit tests and benchmark metric tests exist; full digital-copy regression gate does not. |
-| §23 | Source hash / digital revision lock | PARTIAL | Source SHA-256 is implemented; digital-revision invalidation/lock semantics are not. |
-| §24 | Final `DIGITAL_ACCEPTED` acceptance chain | NOT IMPLEMENTED | Structural recognition gate exists, but the full normative acceptance chain does not. |
-| §25 | Full digitalization status vocabulary | PARTIAL | NDI has `PASS/PASS_WITH_WARNINGS/FAIL`; the protocol's digitalization status lifecycle is not implemented. |
-| §26 | Full reproducibility through preserved artifacts | PARTIAL | Parser evidence/provenance and benchmark provenance exist; complete verification/revision artifact lineage does not. |
-| §27 | AI must execute to factual result and leave explicit handoff if blocked | NOT IMPLEMENTED | No runtime operating-policy enforcement. |
+| §1 | Convert normative source into machine-readable, traceable representation | **PARTIAL** | Core structural + semantic machinery exists; complete user-facing production workflow and final lifecycle are still open. |
+| §2 | `source_anchor → source_text → semantic/table/formula → operator → dependencies → verification/change` | **PARTIAL** | Generic artifacts for all major links exist; end-to-end orchestration and user workflow are not yet complete. |
+| §3.1 | Source of truth + metadata + SHA-256 | **COMPLETE** | Source-bound canonical model, registry and revision-lock checks. |
+| §3.2 | Extraction is evidence, not normative truth | **COMPLETE** | Parser observations remain evidence; canonical acceptance is separated from extraction. |
+| §3.3 | No silent correction; discrepancies retained | **COMPLETE** | Reconciliation and external comparison retain discrepancies and fail closed. |
+| §3.4 | Preserve normative operators exactly | **COMPLETE** | Normative semantic decomposition supports exact requirement/prohibition/recommendation/permission operators; ambiguous modalities fail closed. |
+| §3.5 | Fail-closed on missing evidence | **COMPLETE** | Structural and semantic fail-closed validators implemented. |
+| §3.6 | AI inference ≠ normative requirement | **COMPLETE** | Semantic acceptance/provenance chain requires source-bound evidence. |
+| §4 | Two master normative-register files | **DOWNSTREAM BY DESIGN** | Master SPZ register is domain/project-level. Generic NDI defines the evidence needed to update it. |
+| §5 | Isolated per-document `reference-data/<DOCUMENT_ID>` package | **PARTIAL** | Benchmark/reference artifacts exist; generic production package lifecycle and user-facing creation flow remain open. |
+| §6 | AI-Revisions archive | **PARTIAL** | Immutable AI verification/revision primitives exist; complete `Rev_NNN` operational archive workflow remains open. |
+| §7 | Mandatory pre-work protocol reading/state inspection | **PARTIAL** | Protocol exists and defines the rule; runtime enforcement/checklist is not yet implemented. |
+| §8 | Source identification + edition/amendments | **COMPLETE FOR CORE IDENTITY** | `DocumentIdentity`, source registry and revision binding implemented; legal/current-edition discovery remains workflow/provider dependent. |
+| §9 | Capture immutable primary source | **PARTIAL** | Hash/integrity binding exists; generic source archival/storage lifecycle is not yet a complete NDI product feature. |
+| §10 | Full extraction + extraction log | **PARTIAL** | Multi-parser observation/adapters exist; one production orchestration and persistent extraction-log artifact remain open. |
+| §11 | Atomic normative decomposition | **COMPLETE FOR GENERIC SEMANTIC CONTRACT** | `NormativeUnit` decomposition and validation are implemented. Real-document coverage remains validation work. |
+| §12 | Semantic normalization fields | **COMPLETE FOR GENERIC SEMANTIC CONTRACT** | Subject/predicate/condition/exception/modality and related source-bound fields implemented. |
+| §13 | Table decomposition with notes/footnotes/special markers | **PARTIAL** | Canonical table/cell model and registry exist; robust parser-specific reconstruction + graphical verification are open. |
+| §14 | Formula extraction + graphical/machine verification | **PARTIAL** | Formula node/registry contracts exist; full formula extraction and visual verification are open. |
+| §15 | Changes/deletions represented and traceable | **COMPLETE FOR GENERIC ACTION CONTRACT** | Explicit source-bound ADD/REPLACE/DELETE actions and validation implemented. |
+| §16 | External cross-check and discrepancy resolution | **COMPLETE FOR GENERIC ENGINE CONTRACT** | Discovery, validation, retrieval, independent parsing and comparison implemented; real-source evidence is document-specific. |
+| §17 | Graphical verification | **PARTIAL** | Gate/interface contracts exist conceptually; controlled PDF page/region verification workflow and evidence artifacts remain open. |
+| §18 | Dependency mapping | **COMPLETE FOR GENERIC SEMANTIC CONTRACT** | Dependency graph, exact target resolution and fail-closed validation implemented. |
+| §19 | ≥2 independent AI verification records for `DIGITAL_ACCEPTED` | **COMPLETE FOR GENERIC ACCEPTANCE CONTRACT** | Independent records, distinct independence bases and final acceptance validation implemented. |
+| §20 | Update master MD/XLSX after verification | **DOWNSTREAM BY DESIGN** | Synchronization belongs to the normative register layer; NDI must expose explicit handoff/update state. |
+| §21 | Explicit handoff protocol | **PARTIAL** | Handoff is required by the process, but no complete first-class runtime handoff artifact/workflow exists yet. |
+| §22 | Regression of related rules/tables/formulas/downstream logic | **PARTIAL** | Strong unit/regression coverage exists; complete document-package regression workflow remains open. |
+| §23 | Source hash / digital revision lock | **COMPLETE FOR GENERIC CONTRACT** | Immutable revision lock, deterministic revision ID and reproducibility manifest implemented. |
+| §24 | Final `DIGITAL_ACCEPTED` acceptance chain | **PARTIAL** | Generic final acceptance primitives exist; full production orchestration across all evidence gates is open. |
+| §25 | Full digitalization status vocabulary | **PARTIAL** | Gate statuses exist; complete user-facing document lifecycle/status model remains open. |
+| §26 | Full reproducibility through preserved artifacts | **PARTIAL** | Revision lock and evidence hashes exist; complete real-document package/replay workflow remains open. |
+| §27 | AI must execute to factual result and leave explicit handoff if blocked | **PARTIAL** | Fail-closed behavior is implemented in core validators; runtime operating-policy enforcement and handoff workflow remain open. |
 
-## 4. Current NDI architecture versus protocol boundary
+## 4. What is deliberately NOT the next priority
 
-NDI currently implements the generic part of the protocol up to this boundary:
+**Do not make a single DBN benchmark the development driver at this stage.**
+
+The DBN fixture remains useful as an eventual acceptance/regression document, but running it now would mostly reveal document-specific gaps before the generic product workflow is finished. The same applies to immediately processing other normative PDFs.
+
+The preferred sequence is:
 
 ```text
-PRIMARY SOURCE
-    ↓
-SOURCE IDENTITY / SHA-256
-    ↓
-PARSER EXTRACTION
-    ↓
-PARSER OBSERVATIONS
-    ↓
-CANONICAL STRUCTURAL MODEL
-    ↓
-RECONCILIATION
-    ↓
-STRUCTURAL QUALITY GATE
-    ↓
-[DOWNSTREAM NORMATIVE DIGITALIZATION]
+GENERIC PDF
+   ↓
+USER WORKFLOW / UI
+   ↓
+IDENTITY + SOURCE INTEGRITY
+   ↓
+MULTI-PARSER OBSERVATIONS
+   ↓
+RECONCILIATION / DISCREPANCIES
+   ↓
+EXTERNAL SOURCE CHECK
+   ↓
+CANONICAL DIGITAL COPY
+   ↓
+TABLES / FORMULAS / CHANGES / DEPENDENCIES
+   ↓
+GRAPHICAL VERIFICATION
+   ↓
+REVISION LOCK
+   ↓
+INDEPENDENT VERIFICATION
+   ↓
+REGRESSION
+   ↓
+DIGITAL_ACCEPTED
+   ↓
+ONLY THEN: RUN A DIVERSE SET OF REAL NORMATIVE DOCUMENTS
 ```
 
-The repository's own architecture defines the same boundary: NDI determines what structure and source evidence are present; downstream projects determine what the content means for engineering/compliance decisions.
+## 5. User-facing product requirement — Digital Copy workspace
 
-## 5. DBN V.2.5-56:2014 benchmark status
+The generic engine needs a normal user workflow, not a collection of internal Python contracts.
 
-The DBN fixture is registered with SHA-256:
+Minimum user journey:
 
-`fbaa2493ed510d621e8f368ec4910e5cc30d177744f22356fe3a120bbe5a5056`
+1. **Create Digital Copy** — upload/select a normative PDF.
+2. **Identify source** — designation, title, edition, amendments, issuer, date/status, source URL and SHA-256.
+3. **Inspect extraction** — show parser status and extraction evidence without presenting it as accepted truth.
+4. **Review structure** — pages, sections, paragraphs, lists, tables, cells, formulas, headers/footers and anchors.
+5. **Review discrepancies** — show parser/external conflicts with source evidence and explicit resolution states.
+6. **Review semantic layer** — normative operators, conditions, exceptions, applicability, dependencies, tables/formulas and amendments.
+7. **Graphical verification** — open the source page/region next to the digital element and record verification evidence.
+8. **Verification** — show required independent AI reviews and their scope/results.
+9. **Acceptance** — display exactly why the document is or is not `DIGITAL_ACCEPTED`.
+10. **Export/package** — produce the reproducible digital-copy package, revision lock and evidence manifest.
 
-The migrated historical baseline records MarkItDown 0.1.7, Docling 2.127.0 and OpenDataLoader 2.5.8 measurements. Those measurements are explicitly marked historical evidence reused from the completed Fire Protection Engine benchmark; they are not claimed as fresh NDI executions.
+The UI must be **fail-closed by presentation as well as by code**: unresolved items cannot be visually represented as accepted facts.
 
-Therefore:
+## 6. Real-document validation strategy after the generic block is complete
 
-- **fixture identity:** IMPLEMENTED;
-- **historical parser benchmark evidence:** HISTORICAL EVIDENCE ONLY;
-- **fresh NDI multi-parser structural execution:** OPEN;
-- **fresh NDI discrepancy report:** OPEN;
-- **fresh NDI full structural acceptance:** OPEN.
+Validation should use a deliberately diverse corpus rather than only DBN:
 
-## 6. Priority closure sequence
+- text-native PDF;
+- scanned/OCR PDF;
+- complex tables;
+- formula-heavy document;
+- document with footnotes/endnotes;
+- document with amendments/deletions;
+- multi-column layout;
+- headers/footers and numbering-heavy document;
+- documents from different normative systems (e.g. DBN, DSTU, ISO/IEC, NFPA, laws/regulations).
 
-The protocol-driven implementation order should be:
+The corpus should be selected to exercise different failure modes. DBN is one acceptance document, not the definition of the generic engine.
 
-### Gate A — Structural observation completion
+## 7. Current open work — ordered
 
-Implement/adapt parser outputs for the registered DBN fixture into `ParserObservation` records, including page boundaries, reading order, headings/sections, paragraphs/numbered items, tables/cells, formulas, headers/footers and provenance.
+### P0 — Finish generic Digital Copy product
 
-### Gate B — Reconciliation report
+- Complete end-to-end orchestration from PDF intake to final acceptance package.
+- Define the user-facing Digital Copy workspace and lifecycle.
+- Expose all gate states, discrepancies, evidence and unresolved blockers.
+- Add persistent extraction log and complete per-document package generation.
+- Complete graphical verification workflow and evidence model.
+- Complete operational AI-Revisions/handoff workflow.
+- Complete replay/reproducibility workflow.
 
-Run the current canonical matching/reconciliation machinery against the real multi-parser observations and produce a machine-readable discrepancy report.
+### P1 — Generic regression / fixtures
 
-### Gate C — Structural acceptance
+- Build a synthetic fixture suite covering tables, formulas, amendments, dependencies, ambiguity and fail-closed cases.
+- Add end-to-end tests across the complete generic pipeline.
+- Verify that UI-visible status cannot bypass acceptance gates.
 
-Run the fail-closed recognition audit over the resulting canonical document and make the DBN benchmark pass/fail reproducible in CI.
+### P2 — Real normative corpus validation
 
-### Gate D — Digital representation persistence
+Only after P0/P1 are closed, run a diverse real-document corpus including DBN and other normative systems. Use failures to identify the weakest generic sub-blocks and return those blocks to P0/P1 for hardening.
 
-Persist the verified structural representation and provenance as a stable artifact with source hash and digital revision identity.
+### P3 — Downstream domain integration
 
-### Gate E — Verification/revision infrastructure
+Only after generic Digital Copy is stable, connect the accepted representation to domain-specific normative registers, SPZ engineering semantics and calculation/execution engines.
 
-Add revision records, verification artifacts, source/revision locking and reproducibility metadata required by §§6, 19, 21, 23 and 26.
+## 8. Definition of generic Digital Copy completion
 
-### Gate F — Graphical verification
+The generic block is considered complete when a user can submit a normative PDF and, without manually manipulating internal implementation artifacts, obtain:
 
-Add a controlled graphical verification layer for tables, formulas, critical numbers/operators, footnotes, numbering, amendments and deletions.
+- immutable source identity;
+- multi-parser evidence;
+- reconciled canonical structure;
+- explicit discrepancy register;
+- source-bound semantic/table/formula/change/dependency artifacts;
+- graphical verification evidence;
+- revision-locked digital representation;
+- independent verification evidence;
+- regression result;
+- reproducibility manifest;
+- a clear final status: accepted or blocked, with every blocker explicit.
 
-### Gate G — Normative semantic downstream layer
+Only this state is the starting point for broad real-document validation.
 
-Only after the generic recognition chain is closed should downstream normative semantic decomposition, table/formula rule registries, applicability, dependencies and deterministic execution consume the verified evidence.
+## 9. Important status distinction
 
-## 7. Important non-equivalence
+`PASS` from an individual gate is not equivalent to protocol-level `DIGITAL_ACCEPTED`.
 
-A `PASS` from the current NDI `audit_document()` is **not** equivalent to protocol status `DIGITAL_ACCEPTED`.
-
-Current `PASS` means that the canonical structural representation passes NDI's structural/provenance integrity gate. Protocol `DIGITAL_ACCEPTED` additionally requires semantic/table/formula completion, change/deletion handling, graphical verification or explicit unavailability, cross-check, two independent AI verification records, synchronized master registers, regression and preserved revision artifacts.
-
-Confusing these two statuses would violate the protocol.
+`DIGITAL_ACCEPTED` is a lifecycle result produced only when the complete required evidence chain is present and valid. A document-specific benchmark cannot close generic implementation gaps by itself.
