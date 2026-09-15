@@ -119,6 +119,30 @@ def persist_job(job: DigitalCopyJob, root: Path) -> Path:
     return path
 
 
+def load_job(path: Path) -> DigitalCopyJob:
+    """Load a persisted job without trusting persisted enum or binding values."""
+    data = json.loads(path.read_text(encoding="utf-8"))
+    source_data = data["source"]
+    source = DigitalCopySource(
+        path=str(source_data["path"]),
+        filename=str(source_data["filename"]),
+        sha256=str(source_data["sha256"]),
+    )
+    return DigitalCopyJob(
+        job_id=str(data["job_id"]),
+        source=source,
+        status=DigitalCopyStatus(data["status"]),
+        stage=JobStage(data["stage"]),
+        document_id=data.get("document_id"),
+        revision_id=data.get("revision_id"),
+        artifact_root=data.get("artifact_root"),
+        parser_names=tuple(data.get("parser_names", [])),
+        blockers=list(data.get("blockers", [])),
+        artifacts=dict(data.get("artifacts", {})),
+        metadata=dict(data.get("metadata", {})),
+    )
+
+
 def attach_observations(job: DigitalCopyJob, package: ObservationPackage, root: Path) -> DigitalCopyJob:
     if package.source_sha256 != job.source.sha256:
         job.block("Observation package source hash does not match intake source.")
