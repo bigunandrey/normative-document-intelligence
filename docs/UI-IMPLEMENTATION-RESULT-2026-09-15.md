@@ -1,30 +1,33 @@
-# Product UI Implementation Result — 2026-09-15
+# UI Implementation Result — 2026-09-15
 
-The Product UI Contract is closed as a specification. Implementation hardening is tracked separately.
+## Result
 
-## Implemented baseline
+The Product UI Contract has moved from specification-only to an implemented generic workspace.
 
-- Digital Copies dashboard
-- Create Digital Copy upload flow
-- persisted job detail
-- lifecycle/status and blockers
-- immutable package-local source PDF
-- graphical verification evidence display
-- operational archive display
-- run/archive API boundaries
-- restart persistence
+Implemented in `src/ndi/digital_copy_ui_v2.py`, exposed through `src/ndi/digital_copy_ui.py`.
 
-## Remaining contract implementation
+## Implemented contract areas
 
-- native PDF rendering and interactive page controls
-- source-coordinate overlays
-- bidirectional source/node selection
-- Structure Explorer
-- discrepancy/evidence workspaces
-- verification/acceptance workspaces
-- revision history and export/handoff views
-- production/accessibility/persistence hardening
+- Digital Copies dashboard and PDF intake.
+- Overview, Extraction, Structure, Discrepancies, Digital Copy, Graphical Verification, Verification, Acceptance, Revision History, Export / Handoff views.
+- Immutable package-local source PDF remains the source of truth.
+- Server-side rendering of the exact source PDF page using PyMuPDF.
+- Page navigation and zoom controls.
+- Graphical evidence overlays driven by persisted `page + bbox` evidence.
+- Evidence selection navigates to its source page.
+- Canonical-node/source-anchor display in Structure.
+- Machine-derived acceptance display; no manual `DIGITAL_ACCEPTED` control.
+- Operational archive state remains read-only UI data.
+- Path confinement for source and artifact reads.
 
-## Integrity rule
+## Dependency
 
-The UI renders source-bound evidence and invokes engine contracts. It does not become a second normative rules engine and cannot manually promote a document to `DIGITAL_ACCEPTED`.
+`PyMuPDF>=1.24` was added to the runtime dependencies for exact source-page rendering.
+
+## Verification
+
+The implementation is validated through the repository GitHub Actions regression workflow. Any failing run is treated as non-closure and must be corrected before claiming the implementation complete.
+
+## Remaining P1 hardening
+
+The generic contract implementation does not by itself close production deployment hardening, accessibility audit, browser compatibility testing, or real normative-corpus validation. Those remain separate Phase 11 validation/hardening work.
