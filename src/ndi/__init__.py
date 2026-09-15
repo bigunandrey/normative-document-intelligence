@@ -19,6 +19,7 @@ from .graphical_verification import GraphicalVerificationScope, validate_graphic
 from .graphical_evidence import GraphicalEvidenceBundle, GraphicalEvidenceItem, PageRegion, build_graphical_evidence, persist_graphical_evidence, validate_graphical_evidence_bundle
 from .revision_lock import PROTOCOL_VERSION, RevisionLock, build_revision_lock, persist_revision_lock, verify_revision_lock
 from .ai_verification import AIVerificationRecord, build_ai_verification, build_evidence_hash, persist_ai_verification, validate_ai_verifications
+from .operational_archive import ARCHIVE_VERSION, RevisionArchiveRecord, build_archive_record, next_archive_id, persist_revision_archive, verify_revision_archive
 from .final_acceptance import final_acceptance_with_ai
 from .normative_semantics import ApplicabilityLink, NormativeUnit, RuleRegistryEntry, SemanticDependency, SemanticDependencyGraph, SemanticEvaluation, SemanticInterpretationError, build_applicability_links, build_dependency_graph, build_normative_units, build_rule_registry, decompose_normative_node, evaluate_normative_unit, evaluate_normative_units, validate_applicability_links, validate_dependency_graph, validate_normative_units, validate_rule_registry
 from .dependency_resolution import SemanticDependencyResolution, resolve_dependency_targets, validate_dependency_resolutions
@@ -44,7 +45,7 @@ __all__ = [
     "IntegratedReconciliationReport", "ResolutionAction", "ResolutionDecision", "ResolvedReconciliation", "reconcile_with_external", "resolve_reconciliation",
     "DBNFixtureEvidence", "EvidenceMode", "build_dbn_fixture_evidence", "dbn_structural_gate", "write_dbn_fixture_evidence",
     "GraphicalVerificationScope", "validate_graphical_verification", "GraphicalEvidenceBundle", "GraphicalEvidenceItem", "PageRegion", "build_graphical_evidence", "persist_graphical_evidence", "validate_graphical_evidence_bundle", "PROTOCOL_VERSION", "RevisionLock", "build_revision_lock", "persist_revision_lock", "verify_revision_lock",
-    "AIVerificationRecord", "build_ai_verification", "build_evidence_hash", "persist_ai_verification", "validate_ai_verifications", "final_acceptance_with_ai",
+    "AIVerificationRecord", "build_ai_verification", "build_evidence_hash", "persist_ai_verification", "validate_ai_verifications", "ARCHIVE_VERSION", "RevisionArchiveRecord", "build_archive_record", "next_archive_id", "persist_revision_archive", "verify_revision_archive", "final_acceptance_with_ai",
     "NormativeUnit", "ApplicabilityLink", "RuleRegistryEntry", "SemanticDependency", "SemanticDependencyGraph", "SemanticEvaluation", "SemanticInterpretationError", "build_normative_units", "decompose_normative_node", "validate_normative_units", "build_applicability_links", "validate_applicability_links", "build_rule_registry", "validate_rule_registry", "build_dependency_graph", "validate_dependency_graph", "evaluate_normative_unit", "evaluate_normative_units",
     "SemanticDependencyResolution", "resolve_dependency_targets", "validate_dependency_resolutions", "validate_semantic_provenance", "validate_semantic_fail_closed",
     "AmendmentAction", "AmendmentInterpretationError", "build_amendment_actions", "validate_amendment_actions",
