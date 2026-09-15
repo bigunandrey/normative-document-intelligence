@@ -1,16 +1,18 @@
 from __future__ import annotations
 
-"""Persistent, deterministic artifact package for a Digital Copy job."""
+"""Persistent, deterministic and replayable artifact package for a Digital Copy job."""
 
 from dataclasses import dataclass
 import hashlib
 import json
 from pathlib import Path
 from typing import Any
+import shutil
 
-from .digital_copy_workflow import DigitalCopyJob
+from .digital_copy_workflow import DigitalCopyJob, DigitalCopySource, load_job
 
-PACKAGE_VERSION = "1.0"
+PACKAGE_VERSION = "1.1"
+
 
 @dataclass(frozen=True)
 class PackageManifest:
@@ -23,10 +25,20 @@ class PackageManifest:
     artifacts: tuple[tuple[str, str, str], ...]
 
     def as_dict(self) -> dict[str, Any]:
-        return {"package_version": self.package_version, "job_id": self.job_id, "document_id": self.document_id, "source": {"filename": self.source_filename, "sha256": self.source_sha256}, "revision_id": self.revision_id, "artifacts": [{"name": n, "path": p, "sha256": h} for n, p, h in self.artifacts]}
+        return {
+            "package_version": self.package_version,
+            "job_id": self.job_id,
+            "document_id": self.document_id,
+            "source": {"filename": self.source_filename, "sha256": self.source_sha256},
+            "revision_id": self.revision_id,
+            "artifacts": [
+                {"name": n, "path": p, "sha256": h} for n, p, h in self.artifacts
+            ],
+        }
 
     def to_json(self) -> str:
         return json.dumps(self.as_dict(), ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+
 
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
@@ -35,7 +47,8 @@ def _sha256(path: Path) -> str:
             digest.update(chunk)
     return digest.hexdigest()
 
-def write_artifact(root: Path, relative_path: str, content: str | bytes) -> Path:
+
+def _safe_path(root: Path, relative_path: str) -> Path:
     relative = Path(relative_path)
     if relative.is_absolute() or ".." in relative.parts:
         raise ValueError("Artifact path must remain inside the package root")
@@ -43,12 +56,32 @@ def write_artifact(root: Path, relative_path: str, content: str | bytes) -> Path
     package_root = root.resolve()
     if package_root not in path.parents:
         raise ValueError("Artifact path escapes package root")
+    return path
+
+
+def write_artifact(root: Path, relative_path: str, content: str | bytes) -> Path:
+    path = _safe_path(root, relative_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     if isinstance(content, bytes):
         path.write_bytes(content)
     else:
         path.write_text(content, encoding="utf-8")
     return path
+
+
+def persist_source(job: DigitalCopyJob, root: Path) -> Path:
+    """Copy the immutable intake source into the package and verify its hash."""
+    source = Path(job.source.path)
+    if not source.is_file():
+        raise FileNotFoundError(source)
+    destination = _safe_path(root, f"source/{job.source.filename}")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(source, destination)
+    actual = _sha256(destination)
+    if actual != job.source.sha256:
+        raise ValueError("Packaged source SHA-256 does not match job intake source.")
+    return destination
+
 
 def build_package_manifest(job: DigitalCopyJob, root: Path) -> PackageManifest:
     package_root = root.resolve()
@@ -61,11 +94,21 @@ def build_package_manifest(job: DigitalCopyJob, root: Path) -> PackageManifest:
         if package_root not in path.parents or not path.is_file():
             raise FileNotFoundError(f"Missing declared artifact: {name}")
         entries.append((name, path.relative_to(package_root).as_posix(), _sha256(path)))
-    return PackageManifest(PACKAGE_VERSION, job.job_id, job.document_id, job.source.filename, job.source.sha256, job.revision_id, tuple(entries))
+    return PackageManifest(
+        PACKAGE_VERSION,
+        job.job_id,
+        job.document_id,
+        job.source.filename,
+        job.source.sha256,
+        job.revision_id,
+        tuple(entries),
+    )
+
 
 def persist_package_manifest(job: DigitalCopyJob, root: Path) -> Path:
     root.mkdir(parents=True, exist_ok=True)
     return write_artifact(root, "package-manifest.json", build_package_manifest(job, root).to_json())
+
 
 def verify_package(job: DigitalCopyJob, root: Path) -> tuple[bool, list[str]]:
     manifest_path = root / "package-manifest.json"
@@ -76,17 +119,30 @@ def verify_package(job: DigitalCopyJob, root: Path) -> tuple[bool, list[str]]:
     except (OSError, json.JSONDecodeError) as exc:
         return False, [f"Invalid package manifest: {exc}"]
     issues: list[str] = []
-    if data.get("package_version") != PACKAGE_VERSION: issues.append("Unsupported package version.")
-    if data.get("job_id") != job.job_id: issues.append("Package job_id does not match job.")
+    if data.get("package_version") != PACKAGE_VERSION:
+        issues.append("Unsupported package version.")
+    if data.get("job_id") != job.job_id:
+        issues.append("Package job_id does not match job.")
     source = data.get("source") or {}
-    if source.get("sha256") != job.source.sha256: issues.append("Package source SHA-256 does not match job intake source.")
-    if source.get("filename") != job.source.filename: issues.append("Package source filename does not match job intake source.")
-    if data.get("document_id") != job.document_id: issues.append("Package document identity does not match job.")
-    if data.get("revision_id") != job.revision_id: issues.append("Package revision ID does not match job.")
+    if source.get("sha256") != job.source.sha256:
+        issues.append("Package source SHA-256 does not match job intake source.")
+    if source.get("filename") != job.source.filename:
+        issues.append("Package source filename does not match job intake source.")
+    if data.get("document_id") != job.document_id:
+        issues.append("Package document identity does not match job.")
+    if data.get("revision_id") != job.revision_id:
+        issues.append("Package revision ID does not match job.")
+
+    packaged_source = _safe_path(root, f"source/{job.source.filename}")
+    if not packaged_source.is_file():
+        issues.append("Packaged intake source is missing.")
+    elif _sha256(packaged_source) != job.source.sha256:
+        issues.append("Packaged intake source SHA-256 does not match job intake source.")
+
     artifacts = data.get("artifacts")
     if not isinstance(artifacts, list):
         issues.append("Package artifacts manifest is invalid.")
-        return False, issues
+        return False, sorted(set(issues))
     for entry in artifacts:
         if not isinstance(entry, dict):
             issues.append("Package artifact entry is invalid.")
@@ -95,9 +151,29 @@ def verify_package(job: DigitalCopyJob, root: Path) -> tuple[bool, list[str]]:
         if not isinstance(relative, str) or not isinstance(expected, str):
             issues.append("Package artifact entry lacks path or SHA-256.")
             continue
-        path = (root / relative).resolve()
-        if root.resolve() not in path.parents or not path.is_file():
+        try:
+            path = _safe_path(root, relative)
+        except ValueError:
+            issues.append(f"Package artifact path escapes root: {relative}")
+            continue
+        if not path.is_file():
             issues.append(f"Missing package artifact: {relative}")
             continue
-        if _sha256(path) != expected: issues.append(f"Package artifact hash mismatch: {relative}")
+        if _sha256(path) != expected:
+            issues.append(f"Package artifact hash mismatch: {relative}")
     return not issues, sorted(set(issues))
+
+
+def replay_package(root: Path) -> tuple[DigitalCopyJob | None, list[str]]:
+    """Reload a persisted job and verify every package binding before replay."""
+    job_path = root / "job.json"
+    if not job_path.is_file():
+        return None, ["job.json is missing."]
+    try:
+        job = load_job(job_path)
+    except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        return None, [f"Invalid persisted job: {exc}"]
+    ok, issues = verify_package(job, root)
+    if not ok:
+        return None, issues
+    return job, []
