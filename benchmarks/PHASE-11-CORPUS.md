@@ -59,15 +59,32 @@ That evidence remains historical evidence only. It is not reused as fresh Phase 
 
 Fresh execution requires acquisition of the authoritative PDF bytes into the execution environment so the current source can be hashed and passed through the current generic workflow. No current-head Phase 11 acceptance is claimed until that execution is completed.
 
-## Planned diversity after item 001
+## Corpus item 002 — DBN V.2.2-7:2024
+
+- **Document:** ДБН В.2.2-7:2024 «Будівлі і споруди для зберігання пестицидів та агрохімікатів. Основні положення»
+- **Authoritative registry:** ЄДЕССБ
+- **Registry page:** `https://e-construction.gov.ua/laws_detail/3881854238816470415?doc_type=2`
+- **Control copy:** PDF is listed as a control copy with effective date 2025-04-01.
+- **Purpose in corpus:** current-generation Ukrainian DBN with tables and domain-specific technical structure.
+- **Execution state:** `CANDIDATE`
+
+## Corpus item 003 — DBN V.2.2-10:2022
+
+- **Document:** ДБН В.2.2-10:2022 «Заклади охорони здоров'я. Основні положення»
+- **Authoritative registry:** ЄДЕССБ
+- **Registry page:** `https://e-construction.gov.ua/laws_detail/3883981694604150151?doc_type=2`
+- **Current revision handling:** registry lists the base control copy and Changes №1 and №2, plus consolidated text.
+- **Purpose in corpus:** document with multiple amendment layers and a current consolidated representation.
+- **Execution state:** `CANDIDATE`
+
+## Planned diversity after item 003
 
 The next corpus items should deliberately add:
 
 1. a text-native DSTU/DSTU EN normative document;
 2. a scanned/OCR-heavy normative document;
 3. a document with dense numerical/formula tables;
-4. a document with extensive amendments/deletions;
-5. an international normative document (ISO/IEC or NFPA) where an authoritative copy is legally available to the project.
+4. an international normative document (ISO/IEC or NFPA) where an authoritative copy is legally available to the project.
 
 The exact document is selected only after authoritative source availability and revision identity are established.
 
