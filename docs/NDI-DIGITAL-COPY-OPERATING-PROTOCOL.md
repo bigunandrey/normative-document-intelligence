@@ -197,9 +197,9 @@ Before using real normative documents as the main validation driver, NDI must ha
 
 ### Current Phase 10 regression gate
 
-The generic E2E suite is now CI-green on the current `main` head and has proven the complete acceptance/archive/replay path plus fail-closed lifecycle, revision-binding, package/source tamper and insufficient-verifier cases.
+The generic E2E suite is CI-green through commit `58654902e82596e66a0e81d1e950c1f04bac5547` (GitHub Actions run `34984364656`). It proves the complete acceptance/archive/replay path and representative fail-closed behavior for lifecycle failures, reconciliation disagreement/missing observations, external-source discrepancies, graphical mismatches, semantic unresolved states, critical visual elements, amendment targeting, revision/package/source tampering, insufficient verification and UI restart persistence.
 
-Phase 10 is **not closed yet**. The remaining gate is content/evidence integration: existing graphical, reconciliation, external-source and semantic contracts must be exercised through the actual orchestration boundary, with representative document-content fixtures.
+Phase 10 is **not closed yet**. The remaining gate is extraction-content integration: a text-native fixture and an OCR-like/scanned fixture must exercise the configured extraction boundary, followed by the final complete-matrix evidence and closure review.
 
 After these are complete, a diverse real-document corpus is processed. Failures are classified by generic subsystem and used to harden the weakest subsystem rather than creating document-specific exceptions.
 
