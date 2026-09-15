@@ -6,11 +6,9 @@
 
 ## 1. Strategic target
 
-The immediate target is **not** to process DBN or any other real normative corpus prematurely.
-
 The immediate target is to finish the complete generic product block that converts an arbitrary normative PDF into a verified, reproducible **Digital Copy** and gives a user a normal, understandable way to operate that process.
 
-Only after this block is complete will real documents be used as a broad validation corpus. The corpus must include DBN and other normative systems so that document-specific failures reveal which generic sub-blocks still need hardening.
+Real normative documents remain validation corpus, not the development driver, until the generic product foundation is complete.
 
 Target chain:
 
@@ -56,186 +54,93 @@ Generic source identity, SHA-256 binding, document identity and source-candidate
 
 ### Phase 2 — Parser observation and canonical structural layer — **COMPLETE FOR GENERIC CONTRACT ✅**
 
-Implemented and CI-verified:
-
-- canonical document/node model;
-- stable IDs and source anchors;
-- parser observations and provenance;
-- parser adapter registry;
-- adapter output contract validation;
-- multi-parser adaptation;
-- cross-parser matching/reconciliation;
-- retained discrepancies;
-- fail-closed structural validation.
-
-Real-document execution is deliberately deferred to the validation phase.
+Canonical document/node model, stable source anchors, parser observations/provenance, adapter registry/contracts, multi-parser adaptation, matching/reconciliation and fail-closed structural validation are implemented and CI-verified.
 
 ### Phase 3 — External source discovery, retrieval and comparison — **COMPLETE FOR GENERIC CONTRACT ✅**
 
-Implemented:
-
-- provider-neutral discovery;
-- source identity/revision validation;
-- retrieved-content integrity verification;
-- independent external parsing;
-- external observation aggregation;
-- source-bound comparison and discrepancy evidence.
-
-Real authoritative-source evidence remains document-specific validation work.
+Provider-neutral discovery, source/revision validation, retrieval integrity, independent external parsing, observation aggregation and discrepancy comparison are implemented.
 
 ### Phase 4 — Integrated reconciliation — **COMPLETE FOR GENERIC CONTRACT ✅**
 
-Integrated parser/reconciliation results and explicit resolution outcomes are supported by the verification gates.
+Integrated parser/external reconciliation and explicit resolution outcomes are supported by the verification gates.
 
 ### Phase 5 — Canonical Digital Copy and persistence — **COMPLETE FOR GENERIC CONTRACT ✅**
 
-Phase 5 is closed at the generic engine/workflow-contract level.
+Implemented and CI-verified: deterministic job persistence, stage-evidence contract, production orchestration boundary, per-stage evidence history, extraction log, canonical Digital Copy persistence, immutable package-local source copy, manifest/hash binding, self-contained package creation, fail-closed verification, replay/path rebinding and handoff artifact.
 
-Implemented and CI-verified:
-
-- deterministic Digital Copy job persistence;
-- explicit stage-evidence contract and fail-closed stage boundary;
-- production orchestration boundary covering identity → extraction → reconciliation → digitalization → graphical verification → verification → regression → acceptance;
-- accepted-stage evidence with controlled job bindings (`document_id`, `revision_id`);
-- per-stage evidence history persisted in the job/package;
-- persistent extraction-log artifact;
-- canonical Digital Copy artifact carried through the digitalization stage contract;
-- immutable package-local source copy with SHA-256 verification;
-- package manifest with source/artifact SHA-256 bindings;
-- self-contained `persist_package()` creation;
-- fail-closed package verification;
-- package-local path rebinding on replay;
-- replay independent of original source/artifact locations;
-- first-class handoff artifact containing document/revision/package state and downstream handoff target.
-
-Phase 5 does **not** claim that the concrete document-specific executors, graphical evidence service, UI, independent verification workflow or generic E2E fixture corpus are complete. Those remain later phases and are deliberately not hidden behind the orchestration contract.
+Concrete document executors and UI remain outside this phase.
 
 ### Phase 6 — Semantic Digital Copy layer — **COMPLETE FOR GENERIC CONTRACT ✅ / PRODUCT INTEGRATION OPEN**
 
+Atomic normative units, exact operators, conditions/exceptions, applicability/type links, table/formula registry primitives, dependency graph/resolution, source-bound evaluation, amendment actions, semantic provenance and fail-closed semantic acceptance are implemented.
+
+### Phase 7 — Graphical verification — **COMPLETE FOR GENERIC EVIDENCE CONTRACT ✅**
+
+The generic graphical-verification evidence layer is now closed.
+
 Implemented and CI-verified:
 
-- atomic normative units;
-- exact normative operators;
-- conditions and exceptions;
-- applicability/type links;
-- table/formula rule registry primitives and validation;
-- dependency/cross-reference graph;
-- deterministic target resolution (`RESOLVED`, `UNRESOLVED`, `AMBIGUOUS`);
-- deterministic source-bound semantic evaluation;
-- amendment/deletion actions (`ADD`, `REPLACE`, `DELETE`);
-- complete semantic provenance validation;
-- fail-closed semantic acceptance.
+- explicit page/region model with validated coordinates;
+- source-bound graphical evidence items;
+- critical-element taxonomy covering tables, formulas, operators, numeric values, units, notes, footnotes, numbering, amendments and deletions;
+- source-text vs observed-text evidence;
+- per-item match result;
+- verifier and timestamp binding;
+- bundle-level validation and fail-closed PASS semantics;
+- unresolved-discrepancy blocking;
+- deterministic JSON evidence artifact and SHA-256;
+- persistence helper for `graphical-evidence.json`;
+- regression fixtures for valid evidence, mismatch, source-hash mismatch, invalid regions and deterministic persistence.
 
-Remaining at product level: integrate these artifacts into one coherent Digital Copy workflow and expose their state/evidence through the user interface.
-
-### Phase 7 — Graphical verification — **IN PROGRESS 🔄**
-
-Generic graphical verification must become an explicit evidence-producing workflow, not merely a validator.
-
-Remaining:
-
-- page/region evidence model;
-- source-page viewer integration;
-- critical-element verification workflow;
-- evidence records for tables, formulas, operators, numbers, units, notes, footnotes, numbering and amendments/deletions;
-- fail-closed handling when visual verification is unavailable;
-- regression fixtures for graphical verification.
+**Explicit boundary:** this closes the **generic evidence-producing engine contract**, not the human-facing PDF page viewer. Viewer/UI integration belongs to Phase 9. Real-document visual execution remains Phase 11 validation.
 
 ### Phase 8 — Revision lock and independent verification — **COMPLETE FOR CORE CONTRACT / OPERATIONAL WORKFLOW OPEN ▶️**
 
-Implemented and CI-verified:
+Implemented and CI-verified: immutable revision lock, deterministic revision ID, reproducibility manifest, package replay, independent AI verification records, distinct independence bases and final acceptance validation.
 
-- immutable revision lock;
-- deterministic revision ID;
-- reproducibility manifest;
-- self-contained package creation and replay;
-- independent AI verification records;
-- distinct independence bases;
-- final acceptance validation.
+Remaining operational work: `Rev_<NNN>` archive workflow, operational verification archive and user-visible status.
 
-Remaining operational work:
+### Phase 9 — Generic Digital Copy User Interface — **CURRENT P0 🔄**
 
-- integrate these artifacts into the end-to-end Digital Copy lifecycle;
-- complete `Rev_<NNN>_<DOCUMENT_ID>_<DATE>` archive workflow;
-- explicit operational verification archive;
-- user-visible verification/acceptance status.
-
-### Phase 9 — Generic Digital Copy User Interface — **OPEN ⏳**
-
-Build the normal user-facing workflow around the already implemented engine contracts.
+Build the normal user-facing workflow around the generic engine contracts.
 
 Minimum screens/states:
 
-1. **Projects / Digital Copies** — list documents, lifecycle status, revision and blockers.
-2. **Create Digital Copy** — upload/select PDF and start a run.
-3. **Source Identity** — designation, title, edition, amendments, issuer, source URL, hash and source status.
-4. **Extraction** — parser progress/results and evidence-only warning.
-5. **Structure** — page/section/paragraph/list/table/cell/formula/anchor inspection.
-6. **Discrepancies** — parser/external differences, evidence and resolution state.
-7. **Semantics** — normative operators, conditions, applicability, dependencies, tables/formulas, amendments.
-8. **Graphical Verification** — source page/region alongside the digital element and verification action.
-9. **Verification** — independent AI records, scope, result and evidence.
-10. **Acceptance** — complete acceptance chain, blockers and exact reason for `DIGITAL_ACCEPTED` or blocked status.
-11. **Export / Handoff** — package, manifest, revision lock and downstream handoff.
+1. Projects / Digital Copies;
+2. Create Digital Copy;
+3. Source Identity;
+4. Extraction;
+5. Structure;
+6. Discrepancies;
+7. Semantics;
+8. Graphical Verification — render source PDF page/region next to the digital element and record the Phase 7 evidence;
+9. Verification;
+10. Acceptance;
+11. Export / Handoff.
 
 The UI must never display unresolved content as accepted normative truth.
 
 ### Phase 10 — Generic end-to-end regression suite — **OPEN ⏳**
 
-Before real normative-document validation, create a synthetic/controlled fixture corpus covering:
-
-- text-native PDFs;
-- scanned/OCR PDFs;
-- multi-column layouts;
-- complex tables and merged cells;
-- formulas and special symbols;
-- headers/footers and numbering;
-- footnotes/notes;
-- amendments/deletions;
-- cross-references and ambiguous targets;
-- parser disagreement;
-- external-source disagreement;
-- missing evidence and fail-closed cases;
-- graphical verification evidence;
-- revision-lock tampering;
-- independent verification and final acceptance.
-
-The objective is to prove the **generic block**, not to optimize for one document.
+Create a controlled fixture corpus and exercise the complete generic workflow across text-native/OCR PDFs, complex layouts, tables, formulas, notes, numbering, amendments, disagreements, graphical evidence, revision tampering and final acceptance.
 
 ### Phase 11 — Real normative corpus validation — **NOT STARTED BY DESIGN ⏸️**
 
-Only after Phases 5, 7, 8, 9 and 10 are closed should the system be exercised against real documents.
-
-The validation corpus should include materially different document classes, for example:
-
-- DBN;
-- DSTU / DSTU EN;
-- ISO / IEC;
-- NFPA;
-- laws, orders and technical regulations;
-- scanned and text-native sources;
-- table-heavy and formula-heavy sources;
-- amended documents.
-
-Each failure is classified by generic sub-block. The weakest sub-blocks become the next hardening targets.
+Only after the generic product foundation is complete should the system be exercised against DBN, DSTU/DSTU EN, ISO/IEC, NFPA and other normative systems.
 
 ### Phase 12 — Downstream domain integration — **AFTER GENERIC BLOCK ⏸️**
 
-Only after the generic Digital Copy block is stable should the accepted representation be consumed by SPZ/engineering-specific normative registers, calculations and deterministic domain execution.
+Only after generic Digital Copy is stable should accepted representations be consumed by SPZ/engineering-specific normative registers, calculations and deterministic domain execution.
 
 ## 3. Current open work — priority order
 
-### P0 — Graphical verification **← CURRENT STEP**
+### P0 — Generic Digital Copy UI **← CURRENT STEP**
 
-Turn visual checking into a first-class evidence-producing stage.
+Expose the complete lifecycle and the Phase 7 page/region evidence workflow to users.
 
-### P0 — User interface
+### P0 — Operational verification / revision / handoff
 
-Make the complete process operable by a user without manipulating internal Python artifacts.
-
-### P1 — Operational verification / revision / handoff
-
-Complete `Rev_NNN` archive lifecycle and operational independent-verification archive. The generic handoff artifact and package persistence contract are already present.
+Complete `Rev_NNN` archive lifecycle and operational independent-verification archive.
 
 ### P1 — Generic end-to-end regression
 
@@ -243,7 +148,7 @@ Prove the entire workflow on controlled fixtures before using real normative doc
 
 ### P2 — Real normative corpus
 
-Run DBN plus a diverse set of other normative documents. Use the observed failure distribution to reprioritize generic hardening.
+Run DBN plus a diverse set of other normative documents and classify failures by generic subsystem.
 
 ## 4. Definition of Done — generic Digital Copy block
 
@@ -262,7 +167,7 @@ The generic block is complete when a user can provide a normative PDF and obtain
 - complete export/handoff package;
 - final status that is either `DIGITAL_ACCEPTED` or explicitly blocked with machine-readable reasons.
 
-Phase 5 completion does not by itself satisfy this full product Definition of Done; it closes the canonicalization/persistence/workflow foundation required by the later phases.
+Phase 7 is now a completed generic engine contract, but the overall product Definition of Done still depends on UI, operational verification and generic E2E regression.
 
 ## 5. Operational rule
 
@@ -274,4 +179,4 @@ After every implementation change:
 4. only a successful current-head run is verification evidence;
 5. never use an older green commit as evidence for the current head.
 
-Historical DBN benchmark results remain historical and are not substituted for fresh execution.
+Historical DBN benchmark results are not substituted for fresh execution.
