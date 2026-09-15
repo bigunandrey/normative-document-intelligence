@@ -1,6 +1,6 @@
 # Roadmap — Digital Normative Document / Generic Digital Copy
 
-**Repository:** `bigunandrey/normative-document-intelligence`  
+**Repository:** `normative-document-intelligence`  
 **Protocol:** `DIGITAL-NORMATIVE-DOCUMENT-PROTOCOL v2.1`  
 **Roadmap revision:** 2026-09-15
 
@@ -24,7 +24,7 @@ Real normative documents remain validation corpus, not the development driver, u
 ### Phase 9 — Generic Digital Copy User Interface — **COMPLETE FOR GENERIC UI CONTRACT ✅**
 ### Phase 10 — Generic end-to-end regression suite — **IN PROGRESS 🔄 / CURRENT P0**
 
-Phase 10 has now passed two consecutive current-head CI milestones covering the core acceptance path and expanded fail-closed/tamper behavior. The latest green commit is `ed758a9e8a6a17640b9b0401f10cda5a7e0130fe` (GitHub Actions run `34982088833`).
+The current `main` head is CI-green through commit `58654902e82596e66a0e81d1e950c1f04bac5547` (GitHub Actions run `34984364656`). The latest regression additions cover graphical verification, reconciliation conflict/missing observation, external-source discrepancy, semantic unresolved state, critical visual elements, amendment handling, package/source tamper, insufficient verification, and UI restart persistence.
 
 Implemented and CI-verified in the current matrix:
 
@@ -32,24 +32,24 @@ Implemented and CI-verified in the current matrix:
 - missing-stage and every-stage failure fail-closed behavior;
 - failed evidence without blockers rejected;
 - unsupported stage bindings rejected;
+- parser disagreement and missing-observation states through reconciliation;
+- external-source discrepancy blocking and same-revision agreement;
+- graphical verification success/mismatch through orchestration;
+- table/formula/note/footnote/numbering representative visual evidence;
+- semantic unresolved-state blocking;
+- amendment replacement resolution and unresolved deletion target blocking;
 - archive revision-binding tamper detection;
-- packaged artifact tamper detection;
-- packaged source tamper detection;
+- packaged artifact/source tamper detection;
 - insufficient independent-verifier archive rejection;
 - operational archive verification;
-- package replay after successful acceptance/archive.
+- package replay after successful acceptance/archive;
+- accepted/archive state persistence across UI restart.
 
 Still required before Phase 10 closure:
 
-- parser disagreement / missing-observation fixtures wired through the real reconciliation boundary;
-- text-native and OCR-like extraction fixtures;
-- tables, formulas, notes, footnotes and numbering fixtures wired end-to-end;
-- amendment/deletion fixtures;
-- external-source discrepancy/reconciliation fixture;
-- graphical verification success/mismatch integrated into orchestration;
-- semantic unresolved/ambiguous fixture;
-- UI accepted/blocked persistence end-to-end;
-- final complete-matrix evidence document.
+- text-native extraction fixture through the configured parser boundary;
+- OCR-like/scanned extraction fixture and corresponding fail-closed evidence behavior;
+- final complete-matrix evidence document and closure review.
 
 ### Phase 11 — Real normative corpus validation — **BLOCKED BY DESIGN UNTIL PHASE 10 CLOSES ⏸️**
 
@@ -65,7 +65,7 @@ Only after generic Digital Copy is stable should accepted representations be con
 
 Expand the controlled fixture matrix until the complete generic acceptance path and representative fail-closed paths are proven end-to-end. Every implementation change must be verified by the exact current-head GitHub Actions run.
 
-**Next P0 block:** wire graphical verification evidence and reconciliation disagreement/missing-observation states into the actual orchestration E2E boundary, rather than testing them only as isolated contracts.
+**Next P0 block:** add text-native and OCR-like extraction fixtures through the parser/extraction boundary, then produce the final Phase 10 matrix evidence and closure record.
 
 ### P1 — Generic product hardening
 
