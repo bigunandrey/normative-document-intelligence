@@ -75,7 +75,8 @@ def _verification(lock: RevisionLock, verifier_id: str, basis: str) -> AIVerific
         verified_at="2026-09-15T10:00:00+03:00",
         independence_basis=basis,
     )
-    return AIVerificationRecord(evidence_hash=build_evidence_hash(AIVerificationRecord(evidence_hash="0" * 64, **payload)), **payload)
+    seed = AIVerificationRecord(evidence_hash="0" * 64, **payload)
+    return AIVerificationRecord(evidence_hash=build_evidence_hash(seed), **payload)
 
 
 def test_orchestrator_archives_accepted_revision_and_binds_job(tmp_path: Path) -> None:
@@ -111,7 +112,7 @@ def test_orchestrator_archives_accepted_revision_and_binds_job(tmp_path: Path) -
 
     assert archive.archive_id == "Rev_001"
     assert result.metadata["operational_archive"]["archive_id"] == "Rev_001"
-    assert result.artifacts["operational_archive"].endswith("Rev_001/archive-record.json")
+    assert result.artifacts["operational_archive"].endswith("artifacts/operational-archive.json")
     assert result.metadata["operational_archive"]["verified"] is True
     valid, issues = verify_revision_archive(archive_root, "Rev_001")
     assert valid, issues
