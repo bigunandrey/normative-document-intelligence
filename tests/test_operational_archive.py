@@ -32,17 +32,17 @@ def verifications(doc, lock):
     )
 
 
-def test_archive_is_sequential_and_replayable(tmp_path: Path):
+def test_archive_is_sequential_and_rejects_duplicate_revision(tmp_path: Path):
     doc = make_doc()
     lock_root = tmp_path / "locks"
     lock = persist_revision_lock(doc, lock_root)
     archive_root = tmp_path / "archive"
     records = verifications(doc, lock)
     first = persist_revision_archive(lock, lock_root, archive_root, verification_records=records, result="PASS", created_at="2026-09-15T12:02:00Z")
-    second = persist_revision_archive(lock, lock_root, archive_root, verification_records=records, result="PASS", created_at="2026-09-15T12:03:00Z")
     assert first.archive_id == "Rev_001"
-    assert second.archive_id == "Rev_002"
     assert verify_revision_archive(archive_root, "Rev_001") == (True, [])
+    with pytest.raises(FileExistsError, match="already archived"):
+        persist_revision_archive(lock, lock_root, archive_root, verification_records=records, result="PASS", created_at="2026-09-15T12:03:00Z")
 
 
 def test_pass_archive_requires_two_independent_passes(tmp_path: Path):
@@ -58,8 +58,7 @@ def test_tampered_archive_manifest_is_detected(tmp_path: Path):
     lock_root = tmp_path / "locks"
     lock = persist_revision_lock(doc, lock_root)
     archive_root = tmp_path / "archive"
-    records = verifications(doc, lock)
-    persist_revision_archive(lock, lock_root, archive_root, verification_records=records, result="PASS", created_at="2026-09-15T12:00:00Z")
+    persist_revision_archive(lock, lock_root, archive_root, verification_records=verifications(doc, lock), result="PASS", created_at="2026-09-15T12:00:00Z")
     path = archive_root / "Rev_001" / "reproducibility-manifest.json"
     data = json.loads(path.read_text(encoding="utf-8"))
     data["source_sha256"] = "b" * 64
@@ -67,6 +66,21 @@ def test_tampered_archive_manifest_is_detected(tmp_path: Path):
     ok, issues = verify_revision_archive(archive_root, "Rev_001")
     assert not ok
     assert "Archive source binding mismatch." in issues
+
+
+def test_tampered_verification_is_detected(tmp_path: Path):
+    doc = make_doc()
+    lock_root = tmp_path / "locks"
+    lock = persist_revision_lock(doc, lock_root)
+    archive_root = tmp_path / "archive"
+    persist_revision_archive(lock, lock_root, archive_root, verification_records=verifications(doc, lock), result="PASS", created_at="2026-09-15T12:00:00Z")
+    path = next((archive_root / "Rev_001" / "verification").glob("*.json"))
+    data = json.loads(path.read_text(encoding="utf-8"))
+    data["result"] = "FAIL"
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    ok, issues = verify_revision_archive(archive_root, "Rev_001")
+    assert not ok
+    assert any("hash mismatch" in issue for issue in issues)
 
 
 def test_archive_is_fail_closed_for_invalid_locked_source(tmp_path: Path):
