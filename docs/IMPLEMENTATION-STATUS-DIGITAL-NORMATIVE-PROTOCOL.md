@@ -17,27 +17,25 @@ A `COMPLETE` generic contract does not imply that any particular normative docum
 
 ## 2. Executive result — current state
 
-The generic NDI engine has CI-verified contracts for source identity, parser-neutral canonical structure, multi-parser reconciliation, authoritative-source comparison, canonical Digital Copy persistence/replay, typed production orchestration, semantic representation and graphical verification evidence.
+The generic NDI engine has CI-verified contracts for source identity, parser-neutral canonical structure, multi-parser reconciliation, authoritative-source comparison, canonical Digital Copy persistence/replay, typed production orchestration, semantic representation, graphical verification evidence, revision locking, independent verification and operational revision archiving.
 
-The latest completed implementation step is **Phase 7 — Graphical Verification generic evidence contract**. It now records source-bound page/region evidence for critical visual elements, validates source hash/coordinates/verifier/time, blocks mismatches and unresolved discrepancies, and persists a deterministic evidence artifact with SHA-256.
-
-Remaining gaps are product/operational: user-facing PDF viewer/UI, operational independent-verification archive, generic full-pipeline E2E fixtures and real-document validation.
+Phase 8 now has an immutable `Rev_NNN` archive contract that binds the operational archive to the locked revision, preserves independent verification evidence and detects tampering. The remaining Phase 8 work is integration of archive creation/status into the normal orchestration/UI lifecycle.
 
 ## 3. Requirement-by-requirement cross-check
 
 | Protocol | Requirement | Current NDI status | Evidence / remaining work |
 |---|---|---|---|
-| §1 | Convert normative source into machine-readable, traceable representation | **PARTIAL** | Generic engine contracts are substantial; user-facing production product remains open. |
+| §1 | Convert normative source into machine-readable, traceable representation | **PARTIAL** | Generic engine contracts are substantial; complete user-facing production workflow remains open. |
 | §2 | `source_anchor → source_text → semantic/table/formula → operator → dependencies → verification/change` | **PARTIAL** | Generic links exist; complete concrete end-to-end pipeline remains open. |
 | §3.1 | Source of truth + metadata + SHA-256 | **COMPLETE** | Source-bound canonical/revision contracts. |
 | §3.2 | Extraction is evidence, not normative truth | **COMPLETE** | Parser observations are evidence; canonical acceptance is separate. |
 | §3.3 | No silent correction; discrepancies retained | **COMPLETE** | Reconciliation/external comparison retain discrepancies and fail closed. |
 | §3.4 | Preserve normative operators exactly | **COMPLETE** | Exact normative semantic operators and fail-closed ambiguity handling. |
-| §3.5 | Fail-closed on missing evidence | **COMPLETE** | Structural, semantic, orchestration and graphical evidence boundaries fail closed. |
+| §3.5 | Fail-closed on missing evidence | **COMPLETE** | Structural, semantic, orchestration, graphical and archive boundaries fail closed. |
 | §3.6 | AI inference ≠ normative requirement | **COMPLETE** | Source-bound evidence/provenance required. |
 | §4 | Two master normative-register files | **DOWNSTREAM BY DESIGN** | Domain-level register responsibility. |
 | §5 | Isolated per-document package | **COMPLETE FOR GENERIC PACKAGE CONTRACT** | Source/job/manifest/stage evidence/extraction log/handoff package and replay. |
-| §6 | AI-Revisions archive | **PARTIAL** | Core revision/verification primitives exist; operational `Rev_NNN` archive remains open. |
+| §6 | AI-Revisions archive | **PARTIAL — OPERATIONAL ARCHIVE CONTRACT IMPLEMENTED** | Immutable `Rev_NNN` archive, verification evidence and tamper detection implemented; UI/orchestration integration remains. |
 | §7 | Mandatory pre-work protocol reading/state inspection | **PARTIAL** | Protocol defines it; runtime enforcement remains open. |
 | §8 | Source identification + edition/amendments | **COMPLETE FOR CORE IDENTITY** | Identity/source/revision binding implemented; live legal/current-edition discovery remains provider/workflow dependent. |
 | §9 | Capture immutable primary source | **COMPLETE** | Package-local source copy + SHA-256 verification. |
@@ -48,82 +46,64 @@ Remaining gaps are product/operational: user-facing PDF viewer/UI, operational i
 | §14 | Formula extraction + graphical/machine verification | **PARTIAL** | Generic formula contracts and graphical evidence exist; concrete extraction/reconstruction remains open. |
 | §15 | Changes/deletions represented and traceable | **COMPLETE FOR GENERIC ACTION CONTRACT** | ADD/REPLACE/DELETE actions and validation. |
 | §16 | External cross-check and discrepancy resolution | **COMPLETE FOR GENERIC ENGINE CONTRACT** | Discovery, retrieval, integrity, parsing and comparison. |
-| §17 | Graphical verification | **COMPLETE FOR GENERIC EVIDENCE CONTRACT** | Page/region evidence model, critical-element taxonomy, source binding, source/observed text, match result, verifier/time, deterministic persistence and fail-closed validation. **PDF viewer/UI remains Phase 9.** |
+| §17 | Graphical verification | **COMPLETE FOR GENERIC EVIDENCE CONTRACT** | Page/region evidence model and deterministic persistence. UI source viewer is implemented in Phase 9. |
 | §18 | Dependency mapping | **COMPLETE FOR GENERIC SEMANTIC CONTRACT** | Dependency graph, exact target resolution and fail-closed validation. |
-| §19 | ≥2 independent AI verification records | **COMPLETE FOR GENERIC ACCEPTANCE CONTRACT** | Independent records and final acceptance validation. Operational archive/workflow remains open. |
+| §19 | ≥2 independent AI verification records | **COMPLETE FOR GENERIC ACCEPTANCE CONTRACT** | Independent records and final acceptance validation; operational archive now implemented, lifecycle integration remains. |
 | §20 | Update master MD/XLSX after verification | **DOWNSTREAM BY DESIGN** | Normative-register synchronization is downstream. |
 | §21 | Explicit handoff protocol | **COMPLETE FOR GENERIC ARTIFACT CONTRACT** | Handoff artifact is persisted; downstream execution remains open. |
 | §22 | Regression of related rules/tables/formulas/downstream logic | **PARTIAL** | Unit/regression coverage exists; full generic E2E workflow remains open. |
 | §23 | Source hash / digital revision lock | **COMPLETE FOR GENERIC CONTRACT** | Immutable revision/reproducibility bindings. |
 | §24 | Final `DIGITAL_ACCEPTED` acceptance chain | **PARTIAL** | Orchestration reaches acceptance boundary; complete evidence-driven production chain remains open. |
-| §25 | Full digitalization status vocabulary | **PARTIAL** | Job lifecycle exists; user-facing lifecycle remains open. |
+| §25 | Full digitalization status vocabulary | **PARTIAL** | Job lifecycle and UI exist; archive lifecycle integration remains open. |
 | §26 | Full reproducibility through preserved artifacts | **COMPLETE FOR GENERIC PACKAGE CONTRACT** | Self-contained package, hashes and replay. |
 | §27 | AI must execute to factual result and leave explicit handoff if blocked | **PARTIAL** | Fail-closed orchestration and handoff artifact exist; runtime policy enforcement remains open. |
 
-## 4. Phase 7 closure
+## 4. Phase 8 operational archive result
 
-Phase 7 is **COMPLETE FOR GENERIC EVIDENCE CONTRACT**.
-
-The closed contract is:
+The operational archive contract now provides:
 
 ```text
-Source SHA-256
+Immutable source
       ↓
-Page / Region
+Revision Lock
       ↓
-Critical Element Kind
+Reproducibility Manifest
       ↓
-Source Text ↔ Observed Text
+≥2 Independent Verification Records
       ↓
-Per-item Match
+Rev_NNN immutable archive
       ↓
-Verifier + Timestamp
+Archive binding + hash verification
       ↓
-Bundle Validation
-      ↓
-Deterministic graphical-evidence.json + SHA-256
+Tamper detection / fail-closed result
 ```
 
-Critical visual categories covered by the generic taxonomy:
+Implemented and regression-tested:
 
-- tables;
-- formulas;
-- normative operators;
-- numeric values;
-- units;
-- notes;
-- footnotes;
-- numbering;
-- amendments;
-- deletions.
+- sequential `Rev_001`, `Rev_002`, … identifiers;
+- one archive per locked revision;
+- source/document/revision binding;
+- reproducibility-manifest preservation;
+- independent verification evidence preservation;
+- verification evidence hash validation;
+- duplicate-revision archival rejection;
+- manifest tamper detection;
+- verification-record tamper detection;
+- blocked archive creation when the locked revision is unavailable/invalid.
 
-A PASS bundle cannot contain an unresolved discrepancy or an unmatched visual item. Invalid page/region data and source-hash mismatches are rejected.
+### Explicit boundary
 
-### Explicit non-claims
-
-Phase 7 does **not** claim:
-
-- a PDF renderer/viewer;
-- human click-through UI;
-- automatic screenshot/region acquisition from arbitrary PDFs;
-- document-specific visual correctness;
-- real normative-document validation.
-
-Those belong to Phase 9/UI and Phase 11/real-corpus validation respectively.
+This does **not** yet claim full Phase 8 product closure. Archive creation/status is not yet a first-class operation in the Digital Copy UI/orchestrator, and production authentication/access control is outside the current generic contract.
 
 ## 5. Current open work — ordered
 
-### P0 — Generic Digital Copy UI **CURRENT STEP**
+### P0 — Complete Phase 8 operational integration **CURRENT STEP**
 
-Implement the user-facing Digital Copy workspace and source-page viewer. The viewer must consume Phase 7 page/region evidence without bypassing the source hash or fail-closed state.
-
-### P0 — Operational verification / revision / handoff
-
-Complete `Rev_NNN` archive lifecycle and operational independent-verification archive.
+Connect `Rev_NNN` creation and verification to the Digital Copy orchestration/UI lifecycle and expose archive identity, verification result and tamper/blocker status.
 
 ### P1 — Generic end-to-end regression
 
-Create controlled fixtures proving the entire PDF → Digital Copy lifecycle, including graphical evidence.
+Create controlled fixtures proving the entire PDF → Digital Copy lifecycle, including graphical evidence and revision archive.
 
 ### P2 — Real normative corpus validation
 
@@ -135,9 +115,7 @@ Connect accepted Digital Copies to normative registers, SPZ semantics and engine
 
 ## 6. Definition of generic Digital Copy completion
 
-The generic product is complete only when a user can submit a normative PDF and, through the normal UI, obtain immutable identity, multi-parser evidence, canonical structure, discrepancy resolution, semantic/table/formula/change/dependency artifacts, graphical evidence, revision lock, independent verification, regression, reproducibility manifest and a final accepted/blocked state.
-
-Phase 7 closes the graphical **engine evidence contract**, not this overall product definition.
+The generic product is complete only when a user can submit a normative PDF and, through the normal UI, obtain immutable identity, multi-parser evidence, canonical structure, discrepancy resolution, semantic/table/formula/change/dependency artifacts, graphical evidence, revision lock, independent verification, operational revision archive, regression, reproducibility manifest and a final accepted/blocked state.
 
 ## 7. Operational rule
 
