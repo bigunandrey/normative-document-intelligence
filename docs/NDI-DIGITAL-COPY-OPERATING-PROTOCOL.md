@@ -2,6 +2,7 @@
 
 **Applies to:** `bigunandrey/normative-document-intelligence`  
 **Protocol basis:** `DIGITAL-NORMATIVE-DOCUMENT-PROTOCOL v2.1`  
+**Product UI Contract:** `docs/PRODUCT-UI-CONTRACT.md`  
 **Operational revision:** 2026-09-15
 
 > This document is the NDI implementation/operating supplement to the source protocol. It does not replace or alter the source-derived normative requirements in `docs/DIGITAL-NORMATIVE-DOCUMENT-PROTOCOL.md`.
@@ -135,7 +136,9 @@ A handoff is an explicit artifact, not an informal message.
 
 ## 4. UI information architecture
 
-The first production UI should contain these views:
+The binding product definition is `docs/PRODUCT-UI-CONTRACT.md`.
+
+The production UI contains these views:
 
 1. **Digital Copies** — document list, status, revision, last activity and blockers.
 2. **Create Digital Copy** — source selection/upload and intake.
@@ -184,7 +187,17 @@ The UI must enforce the same rules as the engine:
 - `DIGITAL_ACCEPTED` cannot be manually selected by the user;
 - exports must carry the exact accepted revision and evidence manifest.
 
-## 7. Generic development policy
+## 7. Product UI implementation state
+
+The Product UI Contract is closed at the specification level in `docs/PRODUCT-UI-CONTRACT.md`.
+
+The current generic UI implementation is intentionally recorded separately from contract closure. It currently provides the shell, intake, persisted jobs, lifecycle/blocker display, immutable PDF source access, graphical-evidence listing, workflow/archive API boundaries and restart persistence.
+
+The remaining implementation hardening is governed by the closed Product UI Contract: interactive page rendering and source-region overlays, structure explorer, bidirectional spatial selection, discrepancy/evidence workspaces, and rich verification/acceptance/revision/export views.
+
+These are implementation tasks; the product contract and source protocol are not to be weakened to match the shell.
+
+## 8. Generic development policy
 
 Phase 10 has closed the generic Digital Copy regression gate. The closure evidence is `docs/PHASE-10-CLOSURE-2026-09-15.md`.
 
@@ -194,7 +207,7 @@ The final Phase 10 regression implementation head was `98dfd927352a7e10d4c03e37a
 
 The next step is deliberate corpus validation. A diverse real-document corpus is processed through the generic Digital Copy workflow. Failures are classified by generic subsystem and used to harden the weakest subsystem rather than creating document-specific exceptions.
 
-## 8. Real-document validation corpus
+## 9. Real-document validation corpus
 
 The first corpus should intentionally vary failure modes and formats, including DBN, DSTU/DSTU EN, ISO/IEC, NFPA and legal/regulatory documents, with both text-native and scanned PDFs and documents containing tables, formulas, amendments and complex layouts.
 
