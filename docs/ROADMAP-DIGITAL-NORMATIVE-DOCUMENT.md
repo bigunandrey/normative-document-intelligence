@@ -2,6 +2,7 @@
 
 **Repository:** `normative-document-intelligence`  
 **Protocol:** `DIGITAL-NORMATIVE-DOCUMENT-PROTOCOL v2.1`  
+**Product UI Contract:** `docs/PRODUCT-UI-CONTRACT.md`  
 **Roadmap revision:** 2026-09-15
 
 ## 1. Strategic target
@@ -21,7 +22,7 @@ Real normative documents remain validation corpus, not the development driver, u
 ### Phase 6 — Semantic Digital Copy layer — **COMPLETE FOR GENERIC CONTRACT ✅ / PRODUCT INTEGRATION OPEN**
 ### Phase 7 — Graphical verification — **COMPLETE FOR GENERIC EVIDENCE CONTRACT ✅**
 ### Phase 8 — Revision lock, independent verification and operational archive — **COMPLETE FOR GENERIC OPERATIONAL CONTRACT ✅**
-### Phase 9 — Generic Digital Copy User Interface — **COMPLETE FOR GENERIC UI CONTRACT ✅**
+### Phase 9 — Generic Digital Copy User Interface — **CONTRACT CLOSED ✅ / IMPLEMENTATION HARDENING PARTIAL ⚠️**
 ### Phase 10 — Generic end-to-end regression suite — **COMPLETE FOR GENERIC DIGITAL COPY CONTRACT ✅**
 
 Phase 10 is closed by the E2E regression matrix documented in `docs/PHASE-10-CLOSURE-2026-09-15.md`. The final regression implementation head was `98dfd927352a7e10d4c03e37af9cd432884b73f7`, with GitHub Actions run `34984635942` / test job `104433472094` completing successfully. The closure matrix includes lifecycle fail-closed behavior, reconciliation disagreement/missing observation, external-source discrepancy, graphical verification, critical visual elements, semantic unresolved state, amendments/deletions, text-native and OCR-like extraction, revision/package/source tamper, independent verification, archive/replay and UI restart persistence.
@@ -46,9 +47,21 @@ Only after real-corpus validation should accepted representations be consumed by
 4. convert generic capability gaps into regression fixtures;
 5. repeat until the corpus demonstrates that the generic contract generalizes beyond controlled fixtures.
 
-### P1 — Generic product hardening
+### P1 — Product UI implementation hardening
 
-Address non-blocking hardening discovered during Phase 10/11: richer graphical overlays, production deployment concerns, stronger atomic persistence where justified, and other robustness gaps that do not alter the generic evidence model.
+The Product UI Contract is closed in `docs/PRODUCT-UI-CONTRACT.md`. Remaining implementation work is measured against that contract and includes:
+
+1. interactive native PDF page rendering;
+2. source-region overlays tied to `page + bbox` evidence;
+3. bidirectional `PDF ↔ Canonical Node ↔ Digital Copy` selection;
+4. Structure Explorer;
+5. Discrepancy and Evidence workspaces;
+6. Verification and Acceptance workspaces;
+7. Revision History and Export/Handoff views;
+8. production deployment and accessibility hardening;
+9. stronger atomic persistence where justified.
+
+UI hardening must not change the source protocol or weaken fail-closed behavior.
 
 ### P2 — Downstream domain integration
 
@@ -72,7 +85,7 @@ The generic block is complete when a user can provide a normative PDF and obtain
 - complete export/handoff package;
 - final status that is either `DIGITAL_ACCEPTED` or explicitly blocked with machine-readable reasons.
 
-Phases 5, 7, 8, 9 and 10 are closed at the generic contract level. Phase 11 is the validation gate for real-document generalization.
+The Product UI Contract is closed as a specification; UI implementation hardening and Phase 11 real-document validation remain separate execution tracks.
 
 ## 5. Operational rule
 
