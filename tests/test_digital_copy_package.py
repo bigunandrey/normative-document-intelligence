@@ -72,16 +72,10 @@ def test_package_verification_binds_source_identity(tmp_path: Path) -> None:
 def test_persist_package_is_self_contained_and_replayable(tmp_path: Path) -> None:
     job = make_job(tmp_path)
     root = tmp_path / "package"
-    artifact = write_artifact(root, "placeholder.txt", "artifact\n")
+    artifact = write_artifact(root, "artifact.json", "artifact\n")
     job.artifacts["artifact"] = str(artifact)
 
     persist_package(job, root)
-
-    # Rebind the artifact to a package-local file before final manifest creation.
-    artifact.unlink()
-    artifact = write_artifact(root, "artifact.json", "artifact\n")
-    job.artifacts["artifact"] = str(artifact)
-    persist_package_manifest(job, root)
     Path(job.source.path).unlink()
 
     replayed, issues = replay_package(root)
