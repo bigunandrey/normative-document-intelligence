@@ -8,9 +8,9 @@
 
 ## 1. Purpose
 
-NDI's immediate product objective is to provide a complete generic workflow for converting an arbitrary normative PDF into a verified **Digital Copy**.
+NDI provides a generic workflow for converting an arbitrary normative PDF into a verified **Digital Copy**.
 
-Real normative documents are validation inputs, not the primary development mechanism. The generic workflow must be complete before a broad corpus is processed.
+The generic product foundation is now closed through Phase 10. Real normative documents are the validation corpus for Phase 11 and onward.
 
 ## 2. Product boundary
 
@@ -186,25 +186,18 @@ The UI must enforce the same rules as the engine:
 
 ## 7. Generic development policy
 
-Before using real normative documents as the main validation driver, NDI must have:
+Phase 10 has closed the generic Digital Copy regression gate. The closure evidence is `docs/PHASE-10-CLOSURE-2026-09-15.md`.
 
-1. complete end-to-end orchestration;
-2. a usable Digital Copy UI;
-3. complete graphical verification workflow;
-4. operational revision/evidence/handoff workflow;
-5. generic end-to-end regression fixtures;
-6. reproducible package creation and replay.
+The final Phase 10 regression implementation head was `98dfd927352a7e10d4c03e37af9cd432884b73f7`, with GitHub Actions run `34984635942` / test job `104433472094` completing successfully. The matrix covers lifecycle failures, reconciliation disagreement/missing observation, external-source discrepancy, graphical verification, critical visual elements, semantic unresolved state, amendment/deletion handling, text-native and OCR-like extraction, tamper detection, independent verification, archive/replay and UI restart persistence.
 
-### Current Phase 10 regression gate
+### Phase 11 — real-document validation
 
-The generic E2E suite is CI-green through commit `58654902e82596e66a0e81d1e950c1f04bac5547` (GitHub Actions run `34984364656`). It proves the complete acceptance/archive/replay path and representative fail-closed behavior for lifecycle failures, reconciliation disagreement/missing observations, external-source discrepancies, graphical mismatches, semantic unresolved states, critical visual elements, amendment targeting, revision/package/source tampering, insufficient verification and UI restart persistence.
-
-Phase 10 is **not closed yet**. The remaining gate is extraction-content integration: a text-native fixture and an OCR-like/scanned fixture must exercise the configured extraction boundary, followed by the final complete-matrix evidence and closure review.
-
-After these are complete, a diverse real-document corpus is processed. Failures are classified by generic subsystem and used to harden the weakest subsystem rather than creating document-specific exceptions.
+The next step is deliberate corpus validation. A diverse real-document corpus is processed through the generic Digital Copy workflow. Failures are classified by generic subsystem and used to harden the weakest subsystem rather than creating document-specific exceptions.
 
 ## 8. Real-document validation corpus
 
 The first corpus should intentionally vary failure modes and formats, including DBN, DSTU/DSTU EN, ISO/IEC, NFPA and legal/regulatory documents, with both text-native and scanned PDFs and documents containing tables, formulas, amendments and complex layouts.
 
-The corpus is a validation instrument for the generic product, not a substitute for completing the generic product itself.
+For every corpus item, preserve source identity and SHA-256, edition/amendment status, extraction observations, discrepancies, verification evidence, revision lock, regression result and final accepted/blocked state.
+
+A real-document failure that exposes a generic capability gap must result in a generic engine change plus a regression fixture. A document-specific workaround is not an acceptable substitute.
