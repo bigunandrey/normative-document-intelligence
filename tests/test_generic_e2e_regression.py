@@ -108,3 +108,38 @@ def test_generic_e2e_blocks_failed_reconciliation(tmp_path: Path):
         DigitalCopyOrchestrator(tmp_path / "package", executors).run(job)
     assert job.status == DigitalCopyStatus.BLOCKED
     assert DigitalCopyStatus.DIGITAL_ACCEPTED != job.status
+
+
+def test_generic_e2e_archive_verification_blocks_digital_revision_mismatch(tmp_path: Path):
+    job = _job(tmp_path)
+    orchestrator = DigitalCopyOrchestrator(tmp_path / "package", _executors())
+    result = orchestrator.run(job)
+    lock = RevisionLock(
+        revision_id=result.revision_id,
+        document_id=result.document_id,
+        source_sha256=result.source.sha256,
+        digital_revision="digital-e2e",
+        protocol_version="2.1",
+        parser_versions=(("e2e", "1.0"),),
+    )
+    lock_dir = tmp_path / "locks" / lock.revision_id
+    lock_dir.mkdir(parents=True)
+    (lock_dir / "digital-representation.json").write_text("{}\n", encoding="utf-8")
+    (lock_dir / "reproducibility-manifest.json").write_text(lock.manifest_json(), encoding="utf-8")
+    record = _verification(lock, "verifier-a", "independent-model")
+    orchestrator.archive_revision(
+        result,
+        lock,
+        (record,),
+        lock_root=tmp_path / "locks",
+        archive_root=tmp_path / "archive",
+        created_at="2026-09-15T10:01:00+03:00",
+        result="BLOCKED",
+    )
+    verification_path = next((tmp_path / "archive" / "Rev_001" / "verification").glob("*.json"))
+    data = json.loads(verification_path.read_text(encoding="utf-8"))
+    data["digital_revision"] = "wrong-revision"
+    verification_path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    valid, issues = verify_revision_archive(tmp_path / "archive", "Rev_001")
+    assert not valid
+    assert any("revision binding mismatch" in issue for issue in issues)
