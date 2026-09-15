@@ -13,9 +13,19 @@ def make_job(tmp_path: Path):
 
 
 def passing_executors():
+    def identity(job, root):
+        # Identity establishes the bindings required by the final acceptance gate.
+        job.document_id = "doc-orchestrator"
+        job.revision_id = "rev-orchestrator"
+        return StageResult(True, {"identity.json": "{}\n"})
+
     return {
-        stage: (lambda job, root, stage=stage: StageResult(True, {f"{stage.value.lower()}.json": "{}\n"}))
-        for stage in OrchestrationStage
+        OrchestrationStage.IDENTITY: identity,
+        **{
+            stage: (lambda job, root, stage=stage: StageResult(True, {f"{stage.value.lower()}.json": "{}\n"}))
+            for stage in OrchestrationStage
+            if stage != OrchestrationStage.IDENTITY
+        },
     }
 
 
