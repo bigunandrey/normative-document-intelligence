@@ -7,6 +7,7 @@ import pytest
 
 from ndi.ai_verification import AIVerificationRecord, build_evidence_hash
 from ndi.digital_copy_orchestrator import DigitalCopyOrchestrator, OrchestrationStage
+from ndi.digital_copy_package import replay_package
 from ndi.digital_copy_stage_contracts import StageEvidence, StageEvidenceKind
 from ndi.digital_copy_workflow import DigitalCopySource, DigitalCopyStatus, new_job
 from ndi.operational_archive import verify_revision_archive
@@ -21,12 +22,23 @@ def _job(tmp_path: Path, name: str = "fixture.pdf"):
 
 def _executors():
     def identity(job, root):
-        return StageEvidence(StageEvidenceKind.IDENTITY, True, {"identity.json": "{}\n"}, bindings={"document_id": "doc-e2e", "revision_id": "rev-e2e"})
+        return StageEvidence(
+            StageEvidenceKind.IDENTITY,
+            True,
+            {"identity.json": "{}\n"},
+            bindings={"document_id": "doc-e2e", "revision_id": "rev-e2e"},
+        )
 
     return {
         OrchestrationStage.IDENTITY: identity,
         **{
-            stage: (lambda job, root, stage=stage: StageEvidence(StageEvidenceKind(stage.value), True, {f"{stage.value.lower()}.json": "{}\n"}))
+            stage: (
+                lambda job, root, stage=stage: StageEvidence(
+                    StageEvidenceKind(stage.value),
+                    True,
+                    {f"{stage.value.lower()}.json": "{}\n"},
+                )
+            )
             for stage in OrchestrationStage
             if stage != OrchestrationStage.IDENTITY
         },
@@ -69,7 +81,10 @@ def test_generic_e2e_accept_archive_and_replay(tmp_path: Path):
     lock_dir.mkdir(parents=True)
     (lock_dir / "digital-representation.json").write_text("{}\n", encoding="utf-8")
     (lock_dir / "reproducibility-manifest.json").write_text(lock.manifest_json(), encoding="utf-8")
-    records = (_verification(lock, "verifier-a", "independent-model"), _verification(lock, "verifier-b", "independent-run"))
+    records = (
+        _verification(lock, "verifier-a", "independent-model"),
+        _verification(lock, "verifier-b", "independent-run"),
+    )
 
     archive = orchestrator.archive_revision(
         result,
@@ -83,9 +98,11 @@ def test_generic_e2e_accept_archive_and_replay(tmp_path: Path):
     valid, issues = verify_revision_archive(tmp_path / "archive", "Rev_001")
     assert valid, issues
 
-    replayed_job = json.loads((package / "job.json").read_text(encoding="utf-8"))
-    assert replayed_job["metadata"]["operational_archive"]["archive_id"] == "Rev_001"
-    assert replayed_job["metadata"]["operational_archive"]["verified"] is True
+    replayed_job, replay_issues = replay_package(package)
+    assert replay_issues == []
+    assert replayed_job is not None
+    assert replayed_job.status == DigitalCopyStatus.DIGITAL_ACCEPTED
+    assert replayed_job.metadata["operational_archive"]["verified"] is True
 
 
 def test_generic_e2e_blocks_missing_stage(tmp_path: Path):
@@ -143,3 +160,43 @@ def test_generic_e2e_archive_verification_blocks_digital_revision_mismatch(tmp_p
     valid, issues = verify_revision_archive(tmp_path / "archive", "Rev_001")
     assert not valid
     assert any("revision binding mismatch" in issue for issue in issues)
+
+
+@pytest.mark.parametrize("stage", tuple(OrchestrationStage))
+def test_generic_e2e_every_stage_failure_is_fail_closed(tmp_path: Path, stage: OrchestrationStage):
+    job = _job(tmp_path, f"failure-{stage.value.lower()}.pdf")
+    executors = _executors()
+    executors[stage] = lambda job, root, stage=stage: StageEvidence(
+        StageEvidenceKind(stage.value),
+        False,
+        blockers=(f"fixture failure at {stage.value}",),
+    )
+    with pytest.raises(RuntimeError, match=f"fixture failure at {stage.value}"):
+        DigitalCopyOrchestrator(tmp_path / f"package-{stage.value.lower()}", executors).run(job)
+    assert job.status == DigitalCopyStatus.BLOCKED
+    assert DigitalCopyStatus.DIGITAL_ACCEPTED != job.status
+
+
+def test_generic_e2e_failed_evidence_without_blocker_is_rejected(tmp_path: Path):
+    job = _job(tmp_path)
+    executors = _executors()
+    executors[OrchestrationStage.EXTRACTION] = lambda job, root: StageEvidence(
+        StageEvidenceKind.EXTRACTION, False
+    )
+    with pytest.raises(ValueError, match="must contain blockers"):
+        DigitalCopyOrchestrator(tmp_path / "package", executors).run(job)
+    assert job.status == DigitalCopyStatus.BLOCKED
+
+
+def test_generic_e2e_unknown_stage_binding_is_rejected(tmp_path: Path):
+    job = _job(tmp_path)
+    executors = _executors()
+    executors[OrchestrationStage.IDENTITY] = lambda job, root: StageEvidence(
+        StageEvidenceKind.IDENTITY,
+        True,
+        {"identity.json": "{}\n"},
+        bindings={"unsupported": "value"},
+    )
+    with pytest.raises(ValueError, match="Unsupported Digital Copy job bindings"):
+        DigitalCopyOrchestrator(tmp_path / "package", executors).run(job)
+    assert job.status == DigitalCopyStatus.BLOCKED
