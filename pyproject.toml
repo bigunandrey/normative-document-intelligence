@@ -13,6 +13,7 @@ test = ["pytest>=8.0"]
 
 [project.scripts]
 ndi-ingest = "ndi.cli:main"
+ndi-ui = "ndi.digital_copy_ui:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
