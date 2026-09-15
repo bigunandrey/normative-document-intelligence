@@ -89,17 +89,26 @@ Integrated parser/reconciliation results and explicit resolution outcomes are su
 
 ### Phase 5 — Canonical Digital Copy and persistence — **IN PROGRESS ▶️**
 
-The generic persistence/revision-lock primitives are complete, but the **complete end-to-end Digital Copy workflow** is not yet closed.
+The generic persistence/revision-lock primitives and self-contained package/replay contract are implemented. The complete end-to-end Digital Copy workflow is still not closed.
+
+Completed in this phase:
+
+- deterministic job persistence;
+- package manifest with source/artifact SHA-256 bindings;
+- immutable source copied into package-local `source/` storage;
+- one-call `persist_package()` creation;
+- fail-closed package verification;
+- package-local path rebinding on replay;
+- replay independent of the original source/artifact locations.
 
 Remaining:
 
 - one production orchestration from PDF intake through acceptance;
 - persistent extraction log;
-- complete per-document artifact package creation;
-- unified lifecycle/status model;
+- complete per-document artifact lifecycle;
+- unified lifecycle/status transitions across every stage;
 - user-visible gate/evidence state;
-- reproducible replay of a complete package;
-- export/handoff package.
+- export/handoff package and first-class handoff artifact.
 
 ### Phase 6 — Semantic Digital Copy layer — **COMPLETE FOR GENERIC CONTRACT ✅ / PRODUCT INTEGRATION OPEN**
 
@@ -139,6 +148,7 @@ Implemented and CI-verified:
 - immutable revision lock;
 - deterministic revision ID;
 - reproducibility manifest;
+- self-contained package creation and replay;
 - independent AI verification records;
 - distinct independence bases;
 - final acceptance validation.
@@ -215,21 +225,21 @@ Only after the generic Digital Copy block is stable should the accepted represen
 
 ## 3. Current open work — priority order
 
-### P0 — End-to-end Digital Copy engine
+### P0 — End-to-end Digital Copy orchestration **← CURRENT STEP**
 
-Close the gap between individual verified contracts and one coherent production workflow.
-
-### P0 — User interface
-
-Make the complete process operable by a user without manipulating internal Python artifacts.
+Close the gap between individual verified contracts and one coherent production workflow. The first implementation target is a deterministic orchestration service that persists the job/package after each material stage and fails closed on missing prerequisites.
 
 ### P0 — Graphical verification
 
 Turn visual checking into a first-class evidence-producing stage.
 
+### P0 — User interface
+
+Make the complete process operable by a user without manipulating internal Python artifacts.
+
 ### P1 — Operational evidence/revision/handoff
 
-Complete revision archive, extraction log, package manifest, replay and handoff lifecycle.
+Complete revision archive, extraction log, verification archive, handoff and export lifecycle.
 
 ### P1 — Generic end-to-end regression
 
