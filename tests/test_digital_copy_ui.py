@@ -51,6 +51,7 @@ def test_create_job_persists_immutable_source_and_exposes_detail(tmp_path: Path)
     assert status["status"] == "200 OK"
     assert b"fixture.pdf" in body
     assert b"not locked" in body
+    assert b"Operational Archive" in body
 
     status, body = request(app, "GET", f"/jobs/{job_id}/source")
     assert status["status"] == "200 OK"
@@ -84,3 +85,35 @@ def test_run_uses_injected_runner(tmp_path: Path):
     status, body = request(app, "POST", f"/api/jobs/{job_id}/run")
     assert status["status"] == "200 OK"
     assert __import__("json").loads(body)["accepted"] is True
+
+
+def test_archive_requires_injected_archiver_and_accepted_job(tmp_path: Path):
+    def runner(job):
+        job.status = DigitalCopyStatus.DIGITAL_ACCEPTED
+        return job
+
+    def archiver(job):
+        job.metadata["operational_archive"] = {
+            "archive_id": "Rev_001",
+            "result": "PASS",
+            "verified": True,
+        }
+        return job
+
+    app = DigitalCopyUI(tmp_path, runner=runner, archiver=archiver)
+    _, body = request(app, "POST", "/api/jobs", b"%PDF-1.4\n", "a.pdf")
+    job_id = __import__("json").loads(body)["job_id"]
+
+    status, body = request(app, "POST", f"/api/jobs/{job_id}/archive")
+    assert status["status"] == "409 Conflict"
+    assert b"job_not_accepted" in body
+
+    request(app, "POST", f"/api/jobs/{job_id}/run")
+    status, body = request(app, "POST", f"/api/jobs/{job_id}/archive")
+    assert status["status"] == "200 OK"
+    assert __import__("json").loads(body)["operational_archive"]["archive_id"] == "Rev_001"
+
+    status, body = request(app, "GET", f"/jobs/{job_id}")
+    assert status["status"] == "200 OK"
+    assert b"Rev_001" in body
+    assert b"VALID" in body
