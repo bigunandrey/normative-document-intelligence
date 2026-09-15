@@ -4,7 +4,7 @@ from io import BytesIO
 from pathlib import Path
 
 from ndi.digital_copy_ui import DigitalCopyUI
-from ndi.digital_copy_workflow import DigitalCopyStatus
+from ndi.digital_copy_workflow import DigitalCopyStatus, load_job
 
 
 def request(app, method: str, path: str, body: bytes = b"", filename: str = "source.pdf"):
@@ -115,5 +115,36 @@ def test_archive_requires_injected_archiver_and_accepted_job(tmp_path: Path):
 
     status, body = request(app, "GET", f"/jobs/{job_id}")
     assert status["status"] == "200 OK"
+    assert b"Rev_001" in body
+    assert b"VALID" in body
+
+
+def test_accepted_and_archive_state_survive_ui_restart(tmp_path: Path):
+    def runner(job):
+        job.status = DigitalCopyStatus.DIGITAL_ACCEPTED
+        return job
+
+    def archiver(job):
+        job.metadata["operational_archive"] = {
+            "archive_id": "Rev_001",
+            "result": "PASS",
+            "verified": True,
+        }
+        return job
+
+    app = DigitalCopyUI(tmp_path, runner=runner, archiver=archiver)
+    _, body = request(app, "POST", "/api/jobs", b"%PDF-1.4\n", "restart.pdf")
+    job_id = __import__("json").loads(body)["job_id"]
+    request(app, "POST", f"/api/jobs/{job_id}/run")
+    request(app, "POST", f"/api/jobs/{job_id}/archive")
+
+    persisted = load_job(tmp_path / job_id / "job.json")
+    assert persisted.status == DigitalCopyStatus.DIGITAL_ACCEPTED
+    assert persisted.metadata["operational_archive"]["archive_id"] == "Rev_001"
+
+    restarted = DigitalCopyUI(tmp_path)
+    status, body = request(restarted, "GET", f"/jobs/{job_id}")
+    assert status["status"] == "200 OK"
+    assert b"restart.pdf" in body
     assert b"Rev_001" in body
     assert b"VALID" in body
