@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 import shutil
 
-from .digital_copy_workflow import DigitalCopyJob, DigitalCopySource, load_job
+from .digital_copy_workflow import DigitalCopyJob, DigitalCopySource, load_job, persist_job_file
 
 PACKAGE_VERSION = "1.1"
 
@@ -110,6 +110,15 @@ def persist_package_manifest(job: DigitalCopyJob, root: Path) -> Path:
     return write_artifact(root, "package-manifest.json", build_package_manifest(job, root).to_json())
 
 
+def persist_package(job: DigitalCopyJob, root: Path) -> Path:
+    """Create a complete self-contained package in one deterministic operation."""
+    root.mkdir(parents=True, exist_ok=True)
+    persist_source(job, root)
+    persist_job_file(job, root / "job.json")
+    persist_package_manifest(job, root)
+    return root
+
+
 def verify_package(job: DigitalCopyJob, root: Path) -> tuple[bool, list[str]]:
     manifest_path = root / "package-manifest.json"
     if not manifest_path.is_file():
@@ -143,14 +152,20 @@ def verify_package(job: DigitalCopyJob, root: Path) -> tuple[bool, list[str]]:
     if not isinstance(artifacts, list):
         issues.append("Package artifacts manifest is invalid.")
         return False, sorted(set(issues))
+
+    manifest_entries: dict[str, tuple[str, str]] = {}
     for entry in artifacts:
         if not isinstance(entry, dict):
             issues.append("Package artifact entry is invalid.")
             continue
-        relative, expected = entry.get("path"), entry.get("sha256")
-        if not isinstance(relative, str) or not isinstance(expected, str):
-            issues.append("Package artifact entry lacks path or SHA-256.")
+        name, relative, expected = entry.get("name"), entry.get("path"), entry.get("sha256")
+        if not all(isinstance(value, str) for value in (name, relative, expected)):
+            issues.append("Package artifact entry lacks name, path or SHA-256.")
             continue
+        if name in manifest_entries:
+            issues.append(f"Duplicate package artifact name: {name}")
+            continue
+        manifest_entries[name] = (relative, expected)
         try:
             path = _safe_path(root, relative)
         except ValueError:
@@ -161,11 +176,29 @@ def verify_package(job: DigitalCopyJob, root: Path) -> tuple[bool, list[str]]:
             continue
         if _sha256(path) != expected:
             issues.append(f"Package artifact hash mismatch: {relative}")
+
+    declared_names = set(job.artifacts)
+    manifest_names = set(manifest_entries)
+    for name in sorted(declared_names - manifest_names):
+        issues.append(f"Job artifact is missing from package manifest: {name}")
+    for name in sorted(manifest_names - declared_names):
+        issues.append(f"Package manifest contains undeclared job artifact: {name}")
+    for name in sorted(declared_names & manifest_names):
+        relative, _ = manifest_entries[name]
+        try:
+            declared = Path(job.artifacts[name]).resolve()
+            packaged = _safe_path(root, relative)
+            if declared != packaged:
+                issues.append(f"Job artifact path does not match package manifest: {name}")
+        except ValueError:
+            issues.append(f"Job artifact path escapes package root: {name}")
+
     return not issues, sorted(set(issues))
 
 
 def replay_package(root: Path) -> tuple[DigitalCopyJob | None, list[str]]:
-    """Reload a persisted job and verify every package binding before replay."""
+    """Reload a persisted job, verify bindings, and rebind all paths to package-local files."""
+    root = root.resolve()
     job_path = root / "job.json"
     if not job_path.is_file():
         return None, ["job.json is missing."]
@@ -176,4 +209,14 @@ def replay_package(root: Path) -> tuple[DigitalCopyJob | None, list[str]]:
     ok, issues = verify_package(job, root)
     if not ok:
         return None, issues
+
+    job.source = DigitalCopySource(
+        path=str(_safe_path(root, f"source/{job.source.filename}")),
+        filename=job.source.filename,
+        sha256=job.source.sha256,
+    )
+    manifest = json.loads((root / "package-manifest.json").read_text(encoding="utf-8"))
+    for entry in manifest["artifacts"]:
+        job.artifacts[entry["name"]] = str(_safe_path(root, entry["path"]))
+    job.artifact_root = str(root)
     return job, []
