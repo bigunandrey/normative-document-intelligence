@@ -21,65 +21,35 @@ Real normative documents remain validation corpus, not the development driver, u
 ### Phase 6 — Semantic Digital Copy layer — **COMPLETE FOR GENERIC CONTRACT ✅ / PRODUCT INTEGRATION OPEN**
 ### Phase 7 — Graphical verification — **COMPLETE FOR GENERIC EVIDENCE CONTRACT ✅**
 ### Phase 8 — Revision lock, independent verification and operational archive — **COMPLETE FOR GENERIC OPERATIONAL CONTRACT ✅**
-
-Implemented:
-
-- immutable revision lock and deterministic revision ID;
-- reproducibility manifest and package replay;
-- independent AI verification records with distinct independence bases;
-- fail-closed final acceptance contract;
-- immutable `Rev_NNN` operational archive;
-- archive source/document/revision binding;
-- archived verification evidence and hash validation;
-- duplicate archival of the same revision is rejected;
-- manifest and verification-evidence tamper detection;
-- fail-closed archive creation when the locked revision is missing/invalid;
-- orchestration integration for archive creation;
-- UI archive/status integration;
-- archive identity, result and verification state persisted into the Digital Copy job/handoff.
-
-Production authentication/authorization remains a deployment-layer concern and is not required for generic engine closure.
-
 ### Phase 9 — Generic Digital Copy User Interface — **COMPLETE FOR GENERIC UI CONTRACT ✅**
-
-Implemented:
-
-1. Projects / Digital Copies dashboard;
-2. PDF upload intake;
-3. package-local immutable source copy;
-4. source SHA-256 presentation;
-5. persisted lifecycle/status display;
-6. machine-readable job API;
-7. package-local PDF source viewer;
-8. Graphical Verification evidence display;
-9. blocker and acceptance-state presentation;
-10. workflow-runner boundary;
-11. operational archive controls;
-12. archive identity/result/verification display;
-13. `ndi-ui` launch command;
-14. regression coverage for the UI lifecycle.
-
-Remaining UI enhancements such as rich PDF region overlays are not blockers for the generic contract; they belong to later product hardening/document-specific UX work.
-
 ### Phase 10 — Generic end-to-end regression suite — **IN PROGRESS 🔄 / CURRENT P0**
 
-Prove the complete generic lifecycle using a controlled fixture matrix. The matrix must cover:
+Phase 10 has now passed two consecutive current-head CI milestones covering the core acceptance path and expanded fail-closed/tamper behavior. The latest green commit is `ed758a9e8a6a17640b9b0401f10cda5a7e0130fe` (GitHub Actions run `34982088833`).
 
-- successful end-to-end acceptance;
-- missing-stage and failed-stage fail-closed behavior;
-- parser disagreement and missing observation states;
-- text-native and OCR-like extraction conditions;
-- tables, formulas, notes, footnotes and numbering;
-- amendments and deletions;
-- external-source discrepancy/reconciliation;
-- graphical verification mismatch and success;
-- revision-lock binding and tamper detection;
-- insufficient independent verification;
-- operational archive creation and verification;
-- package replay/reproducibility;
-- UI persistence of final accepted and blocked states.
+Implemented and CI-verified in the current matrix:
 
-Phase 10 closes only when the matrix is green on the current `main` head and the resulting evidence is documented.
+- complete generic acceptance path;
+- missing-stage and every-stage failure fail-closed behavior;
+- failed evidence without blockers rejected;
+- unsupported stage bindings rejected;
+- archive revision-binding tamper detection;
+- packaged artifact tamper detection;
+- packaged source tamper detection;
+- insufficient independent-verifier archive rejection;
+- operational archive verification;
+- package replay after successful acceptance/archive.
+
+Still required before Phase 10 closure:
+
+- parser disagreement / missing-observation fixtures wired through the real reconciliation boundary;
+- text-native and OCR-like extraction fixtures;
+- tables, formulas, notes, footnotes and numbering fixtures wired end-to-end;
+- amendment/deletion fixtures;
+- external-source discrepancy/reconciliation fixture;
+- graphical verification success/mismatch integrated into orchestration;
+- semantic unresolved/ambiguous fixture;
+- UI accepted/blocked persistence end-to-end;
+- final complete-matrix evidence document.
 
 ### Phase 11 — Real normative corpus validation — **BLOCKED BY DESIGN UNTIL PHASE 10 CLOSES ⏸️**
 
@@ -94,6 +64,8 @@ Only after generic Digital Copy is stable should accepted representations be con
 ### P0 — Phase 10 generic E2E regression **← CURRENT STEP**
 
 Expand the controlled fixture matrix until the complete generic acceptance path and representative fail-closed paths are proven end-to-end. Every implementation change must be verified by the exact current-head GitHub Actions run.
+
+**Next P0 block:** wire graphical verification evidence and reconciliation disagreement/missing-observation states into the actual orchestration E2E boundary, rather than testing them only as isolated contracts.
 
 ### P1 — Generic product hardening
 
@@ -125,7 +97,7 @@ The generic block is complete when a user can provide a normative PDF and obtain
 - complete export/handoff package;
 - final status that is either `DIGITAL_ACCEPTED` or explicitly blocked with machine-readable reasons.
 
-Phase 8 and Phase 9 are now closed at the generic contract level. Phase 10 is the remaining gate before real normative-corpus validation.
+Phase 8 and Phase 9 are closed at the generic contract level. Phase 10 remains the final generic completion gate before real normative-corpus validation.
 
 ## 5. Operational rule
 
