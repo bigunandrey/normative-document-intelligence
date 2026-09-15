@@ -2,7 +2,12 @@ from pathlib import Path
 
 import pytest
 
-from ndi.digital_copy_package import persist_package_manifest, verify_package, write_artifact
+from ndi.digital_copy_package import (
+    persist_package_manifest,
+    persist_source,
+    verify_package,
+    write_artifact,
+)
 from ndi.digital_copy_workflow import DigitalCopySource, new_job
 
 
@@ -15,6 +20,7 @@ def make_job(tmp_path: Path):
 def test_package_manifest_records_and_verifies_artifact(tmp_path: Path) -> None:
     job = make_job(tmp_path)
     root = tmp_path / "package"
+    persist_source(job, root)
     artifact = write_artifact(root, "extraction/observations.json", "{}\n")
     job.artifacts["observations"] = str(artifact)
 
@@ -29,6 +35,7 @@ def test_package_manifest_records_and_verifies_artifact(tmp_path: Path) -> None:
 def test_package_verification_fails_closed_on_tampering(tmp_path: Path) -> None:
     job = make_job(tmp_path)
     root = tmp_path / "package"
+    persist_source(job, root)
     artifact = write_artifact(root, "canonical/document.json", "original\n")
     job.artifacts["canonical"] = str(artifact)
     persist_package_manifest(job, root)
@@ -48,6 +55,7 @@ def test_package_rejects_path_traversal(tmp_path: Path) -> None:
 def test_package_verification_binds_source_identity(tmp_path: Path) -> None:
     job = make_job(tmp_path)
     root = tmp_path / "package"
+    persist_source(job, root)
     artifact = write_artifact(root, "artifact.json", "{}\n")
     job.artifacts["artifact"] = str(artifact)
     persist_package_manifest(job, root)
