@@ -22,62 +22,37 @@ Real normative documents remain validation corpus, not the development driver, u
 ### Phase 7 — Graphical verification — **COMPLETE FOR GENERIC EVIDENCE CONTRACT ✅**
 ### Phase 8 — Revision lock, independent verification and operational archive — **COMPLETE FOR GENERIC OPERATIONAL CONTRACT ✅**
 ### Phase 9 — Generic Digital Copy User Interface — **COMPLETE FOR GENERIC UI CONTRACT ✅**
-### Phase 10 — Generic end-to-end regression suite — **IN PROGRESS 🔄 / CURRENT P0**
+### Phase 10 — Generic end-to-end regression suite — **COMPLETE FOR GENERIC DIGITAL COPY CONTRACT ✅**
 
-The current `main` head is CI-green through commit `58654902e82596e66a0e81d1e950c1f04bac5547` (GitHub Actions run `34984364656`). The latest regression additions cover graphical verification, reconciliation conflict/missing observation, external-source discrepancy, semantic unresolved state, critical visual elements, amendment handling, package/source tamper, insufficient verification, and UI restart persistence.
+Phase 10 is closed by the E2E regression matrix documented in `docs/PHASE-10-CLOSURE-2026-09-15.md`. The final regression implementation head was `98dfd927352a7e10d4c03e37af9cd432884b73f7`, with GitHub Actions run `34984635942` / test job `104433472094` completing successfully. The closure matrix includes lifecycle fail-closed behavior, reconciliation disagreement/missing observation, external-source discrepancy, graphical verification, critical visual elements, semantic unresolved state, amendments/deletions, text-native and OCR-like extraction, revision/package/source tamper, independent verification, archive/replay and UI restart persistence.
 
-Implemented and CI-verified in the current matrix:
+### Phase 11 — Real normative corpus validation — **CURRENT P0 ▶️**
 
-- complete generic acceptance path;
-- missing-stage and every-stage failure fail-closed behavior;
-- failed evidence without blockers rejected;
-- unsupported stage bindings rejected;
-- parser disagreement and missing-observation states through reconciliation;
-- external-source discrepancy blocking and same-revision agreement;
-- graphical verification success/mismatch through orchestration;
-- table/formula/note/footnote/numbering representative visual evidence;
-- semantic unresolved-state blocking;
-- amendment replacement resolution and unresolved deletion target blocking;
-- archive revision-binding tamper detection;
-- packaged artifact/source tamper detection;
-- insufficient independent-verifier archive rejection;
-- operational archive verification;
-- package replay after successful acceptance/archive;
-- accepted/archive state persistence across UI restart.
+Process a diverse real normative corpus through the now-closed generic Digital Copy workflow. Use DBN, DSTU/DSTU EN, ISO/IEC, NFPA and legal/regulatory documents where authoritative copies are available. Include text-native and scanned PDFs, tables, formulas, notes/footnotes, amendments/deletions and complex layouts.
 
-Still required before Phase 10 closure:
+Failures are classified by generic subsystem. Generic capability gaps are fixed in the engine and converted into regression fixtures; document-specific exceptions are not used as a substitute for generic fixes.
 
-- text-native extraction fixture through the configured parser boundary;
-- OCR-like/scanned extraction fixture and corresponding fail-closed evidence behavior;
-- final complete-matrix evidence document and closure review.
+### Phase 12 — Downstream domain integration — **AFTER PHASE 11**
 
-### Phase 11 — Real normative corpus validation — **BLOCKED BY DESIGN UNTIL PHASE 10 CLOSES ⏸️**
-
-After Phase 10 closure, exercise the generic engine against DBN, DSTU/DSTU EN, ISO/IEC, NFPA and other normative systems. Failures must be classified by generic subsystem and converted into regression fixtures where appropriate.
-
-### Phase 12 — Downstream domain integration — **AFTER GENERIC BLOCK ⏸️**
-
-Only after generic Digital Copy is stable should accepted representations be consumed by SPZ/engineering-specific normative registers, calculations and deterministic domain execution.
+Only after real-corpus validation should accepted representations be consumed by SPZ/engineering-specific normative registers, calculations and deterministic domain execution.
 
 ## 3. Current open work — priority order
 
-### P0 — Phase 10 generic E2E regression **← CURRENT STEP**
+### P0 — Phase 11 real normative corpus validation **← CURRENT STEP**
 
-Expand the controlled fixture matrix until the complete generic acceptance path and representative fail-closed paths are proven end-to-end. Every implementation change must be verified by the exact current-head GitHub Actions run.
-
-**Next P0 block:** add text-native and OCR-like extraction fixtures through the parser/extraction boundary, then produce the final Phase 10 matrix evidence and closure record.
+1. select a deliberately diverse authoritative corpus;
+2. run each document through the generic Digital Copy workflow;
+3. classify failures by subsystem and severity;
+4. convert generic capability gaps into regression fixtures;
+5. repeat until the corpus demonstrates that the generic contract generalizes beyond controlled fixtures.
 
 ### P1 — Generic product hardening
 
-Address non-blocking hardening discovered during Phase 10: richer graphical overlays, production deployment concerns, stronger atomic persistence where justified, and other robustness gaps that do not alter the generic evidence model.
+Address non-blocking hardening discovered during Phase 10/11: richer graphical overlays, production deployment concerns, stronger atomic persistence where justified, and other robustness gaps that do not alter the generic evidence model.
 
-### P2 — Real normative corpus
+### P2 — Downstream domain integration
 
-Validate against a diverse real corpus only after Phase 10 closes.
-
-### P3 — Downstream domain integration
-
-Connect accepted Digital Copies to normative registers, SPZ semantics and engineering calculation/execution layers.
+Connect accepted Digital Copies to normative registers, SPZ semantics and engineering calculation/execution layers after real-corpus validation establishes generic robustness.
 
 ## 4. Definition of Done — generic Digital Copy block
 
@@ -97,7 +72,7 @@ The generic block is complete when a user can provide a normative PDF and obtain
 - complete export/handoff package;
 - final status that is either `DIGITAL_ACCEPTED` or explicitly blocked with machine-readable reasons.
 
-Phase 8 and Phase 9 are closed at the generic contract level. Phase 10 remains the final generic completion gate before real normative-corpus validation.
+Phases 5, 7, 8, 9 and 10 are closed at the generic contract level. Phase 11 is the validation gate for real-document generalization.
 
 ## 5. Operational rule
 
