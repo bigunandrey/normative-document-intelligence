@@ -194,7 +194,7 @@ def verify_revision_archive(root: Path, archive_id: str) -> tuple[bool, list[str
             record_hash = data.get("evidence_hash")
             if record_hash != path.stem or build_evidence_hash(AIVerificationRecord(**data)) != record_hash:
                 issues.append(f"Archived verification hash mismatch: {path.name}")
-            if data.get("revision_id") != manifest.get("digital_revision") and data.get("digital_revision") != manifest.get("digital_revision"):
+            if data.get("digital_revision") != manifest.get("digital_revision"):
                 issues.append(f"Archived verification revision binding mismatch: {path.name}")
         except (OSError, json.JSONDecodeError, TypeError, ValueError) as exc:
             issues.append(f"Invalid archived verification {path.name}: {exc}")
