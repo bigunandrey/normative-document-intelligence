@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0",
+  "phase": 11,
+  "status": "IN_PROGRESS",
+  "items": [
+    {
+      "item_id": "DBN-V2.5-56-2014",
+      "title": "ДБН В.2.5-56:2014 — Системи протипожежного захисту",
+      "edition": "2025 consolidated text with Changes No. 1 and No. 2",
+      "authoritative_source": "https://e-construction.gov.ua/laws_detail/3778939933176104875?doc_type=2",
+      "state": "ACQUISITION_PENDING",
+      "source_form": "PDF",
+      "revision": "Changes No. 1 and No. 2",
+      "metadata": {
+        "historical_sha256": "fbaa2493ed510d621e8f368ec4910e5cc30d177744f22356fe3a120bbe5a5056",
+        "historical_evidence": "benchmark/dbn-v2.5-56-2014; not current Phase 11 execution evidence"
+      }
+    },
+    {
+      "item_id": "DBN-V2.2-7-2024",
+      "title": "ДБН В.2.2-7:2024",
+      "edition": "current control copy",
+      "authoritative_source": "https://e-construction.gov.ua/laws_detail/3881854238816470415?doc_type=2",
+      "state": "CANDIDATE",
+      "source_form": "PDF"
+    },
+    {
+      "item_id": "DBN-V2.2-10-2022",
+      "title": "ДБН В.2.2-10:2022",
+      "edition": "base plus Changes No. 1 and No. 2 / consolidated text",
+      "authoritative_source": "https://e-construction.gov.ua/laws_detail/3883981694604150151?doc_type=2",
+      "state": "CANDIDATE",
+      "source_form": "PDF"
+    }
+  ]
+}
