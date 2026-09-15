@@ -111,12 +111,18 @@ def new_job(job_id: str, source: DigitalCopySource) -> DigitalCopyJob:
     return DigitalCopyJob(job_id=job_id, source=source)
 
 
-def persist_job(job: DigitalCopyJob, root: Path) -> Path:
-    root.mkdir(parents=True, exist_ok=True)
-    path = root / job.job_id / "job.json"
+def persist_job_file(job: DigitalCopyJob, path: Path) -> Path:
+    """Persist one deterministic job JSON file at an explicit path."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(job.as_dict(), ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(job.as_dict(), ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
     return path
+
+
+def persist_job(job: DigitalCopyJob, root: Path) -> Path:
+    return persist_job_file(job, root / job.job_id / "job.json")
 
 
 def load_job(path: Path) -> DigitalCopyJob:
