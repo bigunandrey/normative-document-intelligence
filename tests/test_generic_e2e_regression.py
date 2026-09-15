@@ -6,11 +6,14 @@ from pathlib import Path
 import pytest
 
 from ndi.ai_verification import AIVerificationRecord, build_evidence_hash
+from ndi.canonical import BoundingBox, CanonicalDocument, CanonicalNode, NodeType, ParserObservation, SourceAnchor
 from ndi.digital_copy_orchestrator import DigitalCopyOrchestrator, OrchestrationStage
 from ndi.digital_copy_package import replay_package, verify_package
 from ndi.digital_copy_stage_contracts import StageEvidence, StageEvidenceKind
 from ndi.digital_copy_workflow import DigitalCopySource, DigitalCopyStatus, new_job
+from ndi.graphical_evidence import GraphicalEvidenceItem, PageRegion, build_graphical_evidence, validate_graphical_evidence_bundle
 from ndi.operational_archive import verify_revision_archive
+from ndi.reconciliation import reconcile_document
 from ndi.revision_lock import RevisionLock
 
 
@@ -78,6 +81,64 @@ def _locked_revision(tmp_path: Path, result):
     return lock
 
 
+def _canonical_with_observations(*texts: str) -> CanonicalDocument:
+    document = CanonicalDocument("doc-e2e", "fixture.pdf", "a" * 64, 1)
+    node = CanonicalNode("node-e2e", NodeType.PARAGRAPH)
+    for index, text in enumerate(texts):
+        node.add_observation(
+            ParserObservation(
+                parser=f"parser-{index + 1}",
+                parser_version="1.0",
+                observation_id=f"obs-{index + 1}",
+                node_type=NodeType.PARAGRAPH,
+                text=text,
+                anchor=SourceAnchor(page=1, bbox=BoundingBox(0, 0, 10, 10)),
+            )
+        )
+    document.add_node(node)
+    return document
+
+
+def _graphical_executor(match: bool):
+    def executor(job, root):
+        item = GraphicalEvidenceItem(
+            evidence_id="gfx-e2e-1",
+            source_hash=job.source.sha256,
+            node_id="node-e2e",
+            element_kind="table",
+            region=PageRegion(page=1, x0=1, y0=1, x1=10, y1=10),
+            source_text="Table 1",
+            observed_text="Table 1" if match else "Table X",
+            match=match,
+            verifier="e2e-visual-verifier",
+            verified_at="2026-09-15T10:00:00+03:00",
+        )
+        bundle = build_graphical_evidence(
+            "doc-e2e",
+            job.source.sha256,
+            (item,),
+            result="PASS" if match else "FAIL",
+            verifier="e2e-visual-verifier",
+            verified_at="2026-09-15T10:00:00+03:00",
+            discrepancies=() if match else ("Table text mismatch",),
+        )
+        gate = validate_graphical_evidence_bundle(bundle)
+        if gate.status.value != "PASS":
+            return StageEvidence(
+                StageEvidenceKind.GRAPHICAL_VERIFICATION,
+                False,
+                {"graphical-evidence.json": bundle.to_json()},
+                blockers=tuple(gate.issues),
+            )
+        return StageEvidence(
+            StageEvidenceKind.GRAPHICAL_VERIFICATION,
+            True,
+            {"graphical-evidence.json": bundle.to_json()},
+        )
+
+    return executor
+
+
 def test_generic_e2e_accept_archive_and_replay(tmp_path: Path):
     job = _job(tmp_path)
     package = tmp_path / "package"
@@ -130,6 +191,64 @@ def test_generic_e2e_blocks_failed_reconciliation(tmp_path: Path):
         DigitalCopyOrchestrator(tmp_path / "package", executors).run(job)
     assert job.status == DigitalCopyStatus.BLOCKED
     assert DigitalCopyStatus.DIGITAL_ACCEPTED != job.status
+
+
+def test_generic_e2e_reconciliation_conflict_through_engine(tmp_path: Path):
+    job = _job(tmp_path)
+    executors = _executors()
+
+    def reconciliation(job, root):
+        report = reconcile_document(_canonical_with_observations("first", "second"))
+        conflicts = report.conflicts
+        return StageEvidence(
+            StageEvidenceKind.RECONCILIATION,
+            not conflicts,
+            {"reconciliation.json": json.dumps([d.__dict__ for d in report.decisions], indent=2, sort_keys=True) + "\n"},
+            blockers=("Unresolved parser conflict",) if conflicts else (),
+        )
+
+    executors[OrchestrationStage.RECONCILIATION] = reconciliation
+    with pytest.raises(RuntimeError, match="Unresolved parser conflict"):
+        DigitalCopyOrchestrator(tmp_path / "package", executors).run(job)
+    assert job.status == DigitalCopyStatus.BLOCKED
+
+
+def test_generic_e2e_missing_observation_through_engine(tmp_path: Path):
+    job = _job(tmp_path)
+    executors = _executors()
+
+    def reconciliation(job, root):
+        report = reconcile_document(_canonical_with_observations())
+        missing = [d for d in report.decisions if d.status == "MISSING_OBSERVATION"]
+        return StageEvidence(
+            StageEvidenceKind.RECONCILIATION,
+            not missing,
+            {"reconciliation.json": json.dumps([d.__dict__ for d in report.decisions], indent=2, sort_keys=True) + "\n"},
+            blockers=("Missing parser observation",) if missing else (),
+        )
+
+    executors[OrchestrationStage.RECONCILIATION] = reconciliation
+    with pytest.raises(RuntimeError, match="Missing parser observation"):
+        DigitalCopyOrchestrator(tmp_path / "package", executors).run(job)
+    assert job.status == DigitalCopyStatus.BLOCKED
+
+
+def test_generic_e2e_graphical_verification_success_through_orchestration(tmp_path: Path):
+    job = _job(tmp_path)
+    executors = _executors()
+    executors[OrchestrationStage.GRAPHICAL_VERIFICATION] = _graphical_executor(True)
+    result = DigitalCopyOrchestrator(tmp_path / "package", executors).run(job)
+    assert result.status == DigitalCopyStatus.DIGITAL_ACCEPTED
+    assert (tmp_path / "package" / "artifacts" / "graphical-evidence.json").is_file()
+
+
+def test_generic_e2e_graphical_verification_mismatch_blocks(tmp_path: Path):
+    job = _job(tmp_path)
+    executors = _executors()
+    executors[OrchestrationStage.GRAPHICAL_VERIFICATION] = _graphical_executor(False)
+    with pytest.raises(RuntimeError, match="does not match|not PASS|unresolved discrepancies"):
+        DigitalCopyOrchestrator(tmp_path / "package", executors).run(job)
+    assert job.status == DigitalCopyStatus.BLOCKED
 
 
 def test_generic_e2e_archive_verification_blocks_digital_revision_mismatch(tmp_path: Path):
