@@ -22,6 +22,7 @@ from .final_acceptance import final_acceptance_with_ai
 from .normative_semantics import ApplicabilityLink, NormativeUnit, RuleRegistryEntry, SemanticDependency, SemanticDependencyGraph, SemanticEvaluation, SemanticInterpretationError, build_applicability_links, build_dependency_graph, build_normative_units, build_rule_registry, decompose_normative_node, evaluate_normative_unit, evaluate_normative_units, validate_applicability_links, validate_dependency_graph, validate_normative_units, validate_rule_registry
 from .dependency_resolution import SemanticDependencyResolution, resolve_dependency_targets, validate_dependency_resolutions
 from .semantic_provenance import validate_semantic_provenance
+from .semantic_acceptance import validate_semantic_fail_closed
 from .amendment_semantics import AmendmentAction, AmendmentInterpretationError, build_amendment_actions, validate_amendment_actions
 from .extractor import ExtractionError, extract_pdf, extract_pdf_evidence, markitdown_version, pdf_page_text, pypdf_version
 from .validator import Quality, RecognitionAudit, RecognitionIssue, audit_document
@@ -44,7 +45,7 @@ __all__ = [
     "GraphicalVerificationScope", "validate_graphical_verification", "PROTOCOL_VERSION", "RevisionLock", "build_revision_lock", "persist_revision_lock", "verify_revision_lock",
     "AIVerificationRecord", "build_ai_verification", "build_evidence_hash", "persist_ai_verification", "validate_ai_verifications", "final_acceptance_with_ai",
     "NormativeUnit", "ApplicabilityLink", "RuleRegistryEntry", "SemanticDependency", "SemanticDependencyGraph", "SemanticEvaluation", "SemanticInterpretationError", "build_normative_units", "decompose_normative_node", "validate_normative_units", "build_applicability_links", "validate_applicability_links", "build_rule_registry", "validate_rule_registry", "build_dependency_graph", "validate_dependency_graph", "evaluate_normative_unit", "evaluate_normative_units",
-    "SemanticDependencyResolution", "resolve_dependency_targets", "validate_dependency_resolutions", "validate_semantic_provenance",
+    "SemanticDependencyResolution", "resolve_dependency_targets", "validate_dependency_resolutions", "validate_semantic_provenance", "validate_semantic_fail_closed",
     "AmendmentAction", "AmendmentInterpretationError", "build_amendment_actions", "validate_amendment_actions",
     "ExtractionError", "extract_pdf", "extract_pdf_evidence", "markitdown_version", "pdf_page_text", "pypdf_version",
     "Quality", "RecognitionAudit", "RecognitionIssue", "audit_document", "ReconciliationDecision", "ReconciliationReport", "reconcile_document",
