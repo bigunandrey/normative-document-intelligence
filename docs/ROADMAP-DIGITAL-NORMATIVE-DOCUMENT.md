@@ -87,28 +87,28 @@ Real authoritative-source evidence remains document-specific validation work.
 
 Integrated parser/reconciliation results and explicit resolution outcomes are supported by the verification gates.
 
-### Phase 5 — Canonical Digital Copy and persistence — **IN PROGRESS ▶️**
+### Phase 5 — Canonical Digital Copy and persistence — **COMPLETE FOR GENERIC CONTRACT ✅**
 
-The generic persistence/revision-lock primitives and self-contained package/replay contract are implemented. The complete end-to-end Digital Copy workflow is still not closed.
+Phase 5 is closed at the generic engine/workflow-contract level.
 
-Completed in this phase:
+Implemented and CI-verified:
 
-- deterministic job persistence;
+- deterministic Digital Copy job persistence;
+- explicit stage-evidence contract and fail-closed stage boundary;
+- production orchestration boundary covering identity → extraction → reconciliation → digitalization → graphical verification → verification → regression → acceptance;
+- accepted-stage evidence with controlled job bindings (`document_id`, `revision_id`);
+- per-stage evidence history persisted in the job/package;
+- persistent extraction-log artifact;
+- canonical Digital Copy artifact carried through the digitalization stage contract;
+- immutable package-local source copy with SHA-256 verification;
 - package manifest with source/artifact SHA-256 bindings;
-- immutable source copied into package-local `source/` storage;
-- one-call `persist_package()` creation;
+- self-contained `persist_package()` creation;
 - fail-closed package verification;
 - package-local path rebinding on replay;
-- replay independent of the original source/artifact locations.
+- replay independent of original source/artifact locations;
+- first-class handoff artifact containing document/revision/package state and downstream handoff target.
 
-Remaining:
-
-- one production orchestration from PDF intake through acceptance;
-- persistent extraction log;
-- complete per-document artifact lifecycle;
-- unified lifecycle/status transitions across every stage;
-- user-visible gate/evidence state;
-- export/handoff package and first-class handoff artifact.
+Phase 5 does **not** claim that the concrete document-specific executors, graphical evidence service, UI, independent verification workflow or generic E2E fixture corpus are complete. Those remain later phases and are deliberately not hidden behind the orchestration contract.
 
 ### Phase 6 — Semantic Digital Copy layer — **COMPLETE FOR GENERIC CONTRACT ✅ / PRODUCT INTEGRATION OPEN**
 
@@ -130,7 +130,7 @@ Remaining at product level: integrate these artifacts into one coherent Digital 
 
 ### Phase 7 — Graphical verification — **IN PROGRESS 🔄**
 
-Generic graphical verification must become an explicit evidence-producing workflow, not merely a future concept.
+Generic graphical verification must become an explicit evidence-producing workflow, not merely a validator.
 
 Remaining:
 
@@ -157,7 +157,7 @@ Remaining operational work:
 
 - integrate these artifacts into the end-to-end Digital Copy lifecycle;
 - complete `Rev_<NNN>_<DOCUMENT_ID>_<DATE>` archive workflow;
-- explicit handoff artifact/workflow;
+- explicit operational verification archive;
 - user-visible verification/acceptance status.
 
 ### Phase 9 — Generic Digital Copy User Interface — **OPEN ⏳**
@@ -225,11 +225,7 @@ Only after the generic Digital Copy block is stable should the accepted represen
 
 ## 3. Current open work — priority order
 
-### P0 — End-to-end Digital Copy orchestration **← CURRENT STEP**
-
-Close the gap between individual verified contracts and one coherent production workflow. The first implementation target is a deterministic orchestration service that persists the job/package after each material stage and fails closed on missing prerequisites.
-
-### P0 — Graphical verification
+### P0 — Graphical verification **← CURRENT STEP**
 
 Turn visual checking into a first-class evidence-producing stage.
 
@@ -237,9 +233,9 @@ Turn visual checking into a first-class evidence-producing stage.
 
 Make the complete process operable by a user without manipulating internal Python artifacts.
 
-### P1 — Operational evidence/revision/handoff
+### P1 — Operational verification / revision / handoff
 
-Complete revision archive, extraction log, verification archive, handoff and export lifecycle.
+Complete `Rev_NNN` archive lifecycle and operational independent-verification archive. The generic handoff artifact and package persistence contract are already present.
 
 ### P1 — Generic end-to-end regression
 
@@ -266,7 +262,7 @@ The generic block is complete when a user can provide a normative PDF and obtain
 - complete export/handoff package;
 - final status that is either `DIGITAL_ACCEPTED` or explicitly blocked with machine-readable reasons.
 
-No real-document benchmark is required to declare the **generic software contract** complete; real documents are the validation corpus that follows it.
+Phase 5 completion does not by itself satisfy this full product Definition of Done; it closes the canonicalization/persistence/workflow foundation required by the later phases.
 
 ## 5. Operational rule
 
