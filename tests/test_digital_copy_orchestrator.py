@@ -2,10 +2,13 @@ from pathlib import Path
 
 import pytest
 
+from ndi.ai_verification import AIVerificationRecord, build_evidence_hash
 from ndi.digital_copy_orchestrator import DigitalCopyOrchestrator, OrchestrationStage
 from ndi.digital_copy_stage_contracts import StageEvidence, StageEvidenceKind
 from ndi.digital_copy_workflow import DigitalCopySource, DigitalCopyStatus, new_job
 from ndi.digital_copy_package import replay_package
+from ndi.revision_lock import RevisionLock
+from ndi.operational_archive import verify_revision_archive
 
 
 def make_job(tmp_path: Path):
@@ -57,6 +60,83 @@ def test_orchestrator_persists_every_stage_and_accepts(tmp_path: Path) -> None:
     assert replayed.accepted
     assert replayed.document_id == "doc-orchestrator"
     assert replayed.revision_id == "rev-orchestrator"
+
+
+def _verification(lock: RevisionLock, verifier_id: str, basis: str) -> AIVerificationRecord:
+    payload = dict(
+        verifier_id=verifier_id,
+        model_id="test-model",
+        document_id=lock.document_id,
+        source_sha256=lock.source_sha256,
+        digital_revision=lock.digital_revision,
+        scope=("all",),
+        checks=("identity", "structure"),
+        result="PASS",
+        verified_at="2026-09-15T10:00:00+03:00",
+        independence_basis=basis,
+    )
+    return AIVerificationRecord(evidence_hash=build_evidence_hash(AIVerificationRecord(evidence_hash="0" * 64, **payload)), **payload)
+
+
+def test_orchestrator_archives_accepted_revision_and_binds_job(tmp_path: Path) -> None:
+    job = make_job(tmp_path)
+    package = tmp_path / "package"
+    orchestrator = DigitalCopyOrchestrator(package, passing_executors())
+    result = orchestrator.run(job)
+
+    lock_root = tmp_path / "locks"
+    archive_root = tmp_path / "archive"
+    lock = RevisionLock(
+        revision_id=result.revision_id,
+        document_id=result.document_id,
+        source_sha256=result.source.sha256,
+        digital_revision="digital-test",
+        protocol_version="2.1",
+        parser_versions=(("test", "1.0"),),
+    )
+    lock_dir = lock_root / lock.revision_id
+    lock_dir.mkdir(parents=True)
+    (lock_dir / "digital-representation.json").write_text("{}\n", encoding="utf-8")
+    (lock_dir / "reproducibility-manifest.json").write_text(lock.manifest_json(), encoding="utf-8")
+    records = (_verification(lock, "verifier-a", "separate-model"), _verification(lock, "verifier-b", "independent-run"))
+
+    archive = orchestrator.archive_revision(
+        result,
+        lock,
+        records,
+        lock_root=lock_root,
+        archive_root=archive_root,
+        created_at="2026-09-15T10:01:00+03:00",
+    )
+
+    assert archive.archive_id == "Rev_001"
+    assert result.metadata["operational_archive"]["archive_id"] == "Rev_001"
+    assert result.artifacts["operational_archive"].endswith("Rev_001/archive-record.json")
+    assert result.metadata["operational_archive"]["verified"] is True
+    valid, issues = verify_revision_archive(archive_root, "Rev_001")
+    assert valid, issues
+    assert "operational_archive" in result.as_dict()["metadata"]
+
+
+def test_orchestrator_archive_requires_accepted_job(tmp_path: Path) -> None:
+    job = make_job(tmp_path)
+    lock = RevisionLock(
+        revision_id="rev-orchestrator",
+        document_id="doc-orchestrator",
+        source_sha256=job.source.sha256,
+        digital_revision="digital-test",
+        protocol_version="2.1",
+        parser_versions=(),
+    )
+    with pytest.raises(RuntimeError, match="DIGITAL_ACCEPTED"):
+        DigitalCopyOrchestrator(tmp_path / "package", {}).archive_revision(
+            job,
+            lock,
+            (),
+            lock_root=tmp_path / "locks",
+            archive_root=tmp_path / "archive",
+            created_at="2026-09-15T10:00:00+03:00",
+        )
 
 
 def test_orchestrator_blocks_when_executor_is_missing(tmp_path: Path) -> None:
