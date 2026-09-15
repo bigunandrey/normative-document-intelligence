@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""Immutable operational revision archive for accepted Digital Copy evidence."""
+"""Immutable operational revision archive for Digital Copy verification evidence."""
 
 from dataclasses import dataclass
 import hashlib
@@ -8,8 +8,8 @@ import json
 from pathlib import Path
 from typing import Mapping
 
-from .ai_verification import AIVerificationRecord, validate_ai_verifications
-from .revision_lock import RevisionLock, verify_revision_lock
+from .ai_verification import AIVerificationRecord, build_evidence_hash, validate_ai_verifications
+from .revision_lock import RevisionLock
 
 
 ARCHIVE_VERSION = "1.0"
@@ -48,11 +48,12 @@ def _sha256_text(value: str) -> str:
 
 
 def next_archive_id(root: Path) -> str:
-    numbers = []
-    for path in root.glob("Rev_*"):
-        if path.is_dir() and path.name[4:].isdigit():
-            numbers.append(int(path.name[4:]))
-    return f"Rev_{(max(numbers, default=0) + 1):03d}"
+    numbers = [
+        int(path.name[4:])
+        for path in root.glob("Rev_*")
+        if path.is_dir() and path.name[4:].isdigit()
+    ]
+    return f"Rev_{max(numbers, default=0) + 1:03d}"
 
 
 def build_archive_record(
@@ -67,16 +68,34 @@ def build_archive_record(
         raise ValueError("Archive result must be PASS or BLOCKED")
     if not created_at.strip():
         raise ValueError("Archive creation timestamp is required")
-    hashes = tuple(sorted(record.evidence_hash for record in verification_records))
     return RevisionArchiveRecord(
         archive_id=archive_id,
         revision_id=lock.revision_id,
         document_id=lock.document_id,
         source_sha256=lock.source_sha256,
         manifest_sha256=lock.manifest_sha256(),
-        verification_hashes=hashes,
+        verification_hashes=tuple(sorted(record.evidence_hash for record in verification_records)),
         result=result,
         created_at=created_at,
+    )
+
+
+def _verify_locked_manifest(lock: RevisionLock, root: Path) -> bool:
+    directory = root / lock.revision_id
+    manifest = directory / "reproducibility-manifest.json"
+    canonical = directory / "digital-representation.json"
+    if not manifest.is_file() or not canonical.is_file():
+        return False
+    try:
+        data = json.loads(manifest.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    canonical_manifest = json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    return (
+        data.get("revision_id") == lock.revision_id
+        and data.get("document_id") == lock.document_id
+        and data.get("source_sha256") == lock.source_sha256
+        and _sha256_text(canonical_manifest) == lock.manifest_sha256()
     )
 
 
@@ -90,14 +109,23 @@ def persist_revision_archive(
     created_at: str,
     handoff: Mapping[str, object] | None = None,
 ) -> RevisionArchiveRecord:
-    """Persist an immutable Rev_NNN archive after validating its locked evidence."""
-    if not verify_revision_lock_by_manifest(lock, lock_root):
+    """Persist one immutable Rev_NNN archive after validating locked evidence."""
+    if not _verify_locked_manifest(lock, lock_root):
         raise ValueError("Revision lock is missing or invalid; archive creation blocked")
     valid, issues = validate_ai_verifications(verification_records, lock)
     if result == "PASS" and not valid:
         raise ValueError("Cannot archive PASS revision: " + "; ".join(issues))
 
     archive_root.mkdir(parents=True, exist_ok=True)
+    for existing in archive_root.glob("Rev_*"):
+        if existing.is_dir() and (existing / "archive-record.json").is_file():
+            try:
+                existing_record = json.loads((existing / "archive-record.json").read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            if existing_record.get("revision_id") == lock.revision_id:
+                raise FileExistsError(f"Revision is already archived as {existing.name}")
+
     archive_id = next_archive_id(archive_root)
     directory = archive_root / archive_id
     directory.mkdir(parents=False, exist_ok=False)
@@ -127,28 +155,6 @@ def persist_revision_archive(
     return record
 
 
-def verify_revision_lock_by_manifest(lock: RevisionLock, root: Path) -> bool:
-    return verify_revision_lock_stub(lock, root)
-
-
-def verify_revision_lock_stub(lock: RevisionLock, root: Path) -> bool:
-    directory = root / lock.revision_id
-    manifest = directory / "reproducibility-manifest.json"
-    canonical = directory / "digital-representation.json"
-    if not manifest.is_file() or not canonical.is_file():
-        return False
-    try:
-        data = json.loads(manifest.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return False
-    return (
-        data.get("revision_id") == lock.revision_id
-        and data.get("document_id") == lock.document_id
-        and data.get("source_sha256") == lock.source_sha256
-        and _sha256_text(json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True) + "\n") == lock.manifest_sha256()
-    )
-
-
 def verify_revision_archive(root: Path, archive_id: str) -> tuple[bool, list[str]]:
     directory = root / archive_id
     record_path = directory / "archive-record.json"
@@ -157,13 +163,14 @@ def verify_revision_archive(root: Path, archive_id: str) -> tuple[bool, list[str
     if not directory.is_dir():
         return False, ["Revision archive directory is missing."]
     if not record_path.is_file() or not manifest_path.is_file():
-        issues.append("Revision archive record or reproducibility manifest is missing.")
-        return False, issues
+        return False, ["Revision archive record or reproducibility manifest is missing."]
     try:
         record = json.loads(record_path.read_text(encoding="utf-8"))
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         return False, [f"Invalid revision archive JSON: {exc}"]
+    if record.get("archive_version") != ARCHIVE_VERSION:
+        issues.append("Unsupported archive version.")
     if record.get("archive_id") != archive_id:
         issues.append("Archive ID mismatch.")
     if record.get("revision_id") != manifest.get("revision_id"):
@@ -172,11 +179,23 @@ def verify_revision_archive(root: Path, archive_id: str) -> tuple[bool, list[str
         issues.append("Archive document binding mismatch.")
     if record.get("source_sha256") != manifest.get("source_sha256"):
         issues.append("Archive source binding mismatch.")
-    if record.get("manifest_sha256") != _sha256_text(json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n"):
+    canonical_manifest = json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    if record.get("manifest_sha256") != _sha256_text(canonical_manifest):
         issues.append("Archive manifest hash mismatch.")
+
     verification_dir = directory / "verification"
     expected = set(record.get("verification_hashes", []))
     actual = {p.stem for p in verification_dir.glob("*.json")} if verification_dir.is_dir() else set()
     if expected != actual:
         issues.append("Archived verification set does not match archive record.")
-    return not issues, issues
+    for path in sorted(verification_dir.glob("*.json")) if verification_dir.is_dir() else []:
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            record_hash = data.get("evidence_hash")
+            if record_hash != path.stem or build_evidence_hash(AIVerificationRecord(**data)) != record_hash:
+                issues.append(f"Archived verification hash mismatch: {path.name}")
+            if data.get("revision_id") != manifest.get("digital_revision") and data.get("digital_revision") != manifest.get("digital_revision"):
+                issues.append(f"Archived verification revision binding mismatch: {path.name}")
+        except (OSError, json.JSONDecodeError, TypeError, ValueError) as exc:
+            issues.append(f"Invalid archived verification {path.name}: {exc}")
+    return not issues, sorted(set(issues))
