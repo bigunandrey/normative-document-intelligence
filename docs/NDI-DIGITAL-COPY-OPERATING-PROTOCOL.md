@@ -195,6 +195,12 @@ Before using real normative documents as the main validation driver, NDI must ha
 5. generic end-to-end regression fixtures;
 6. reproducible package creation and replay.
 
+### Current Phase 10 regression gate
+
+The generic E2E suite is now CI-green on the current `main` head and has proven the complete acceptance/archive/replay path plus fail-closed lifecycle, revision-binding, package/source tamper and insufficient-verifier cases.
+
+Phase 10 is **not closed yet**. The remaining gate is content/evidence integration: existing graphical, reconciliation, external-source and semantic contracts must be exercised through the actual orchestration boundary, with representative document-content fixtures.
+
 After these are complete, a diverse real-document corpus is processed. Failures are classified by generic subsystem and used to harden the weakest subsystem rather than creating document-specific exceptions.
 
 ## 8. Real-document validation corpus
